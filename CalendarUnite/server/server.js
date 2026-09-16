@@ -1,12 +1,19 @@
+// Importamos Express para crear el servidor web
 const express = require('express');
+// Importamos CORS para permitir peticiones desde otros dominios (ej. el frontend)
 const cors = require('cors');
 
+// Inicializamos la aplicación de Express
 const app = express();
+// Definimos el puerto del servidor (usa la variable de entorno o por defecto el 3000)
 const PORT = process.env.PORT || 3000;
 
+// Habilitamos CORS en toda la aplicación
 app.use(cors());
+// Middleware para que Express pueda leer y entender datos en formato JSON
 app.use(express.json());
 
+// Arreglo en memoria con los datos iniciales de los eventos
 let events = [
   {
     id: 'evt-100',
@@ -115,16 +122,22 @@ let events = [
   }
 ];
 
+// Arreglo en memoria para almacenar las personas inscritas a los eventos
 let attendees = [];
 
+// Ruta GET para obtener la lista de eventos (soporta filtros opcionales por modalidad y búsqueda)
 app.get('/api/events', (req, res) => {
+  // Extraemos parámetros de búsqueda desde la URL (?modality=...&search=...)
   const { modality, search } = req.query;
+  // Copiamos la lista original de eventos para filtrar sobre ella
   let filtered = [...events];
 
+  // Si se envió modalidad y no es "Todas", filtramos ignorando mayúsculas/minúsculas
   if (modality && modality !== 'Todas') {
     filtered = filtered.filter(e => e.modality.toLowerCase() === modality.toString().toLowerCase());
   }
 
+  // Si hay un texto de búsqueda, filtramos por coincidencia en título, descripción o categoría
   if (search) {
     const q = search.toString().toLowerCase();
     filtered = filtered.filter(e => 
@@ -134,43 +147,57 @@ app.get('/api/events', (req, res) => {
     );
   }
 
+  // Respondemos enviando la lista (filtrada o completa) en formato JSON
   res.json(filtered);
 });
 
+// Ruta GET para obtener el detalle de un solo evento por su ID
 app.get('/api/events/:id', (req, res) => {
+  // Buscamos el evento que coincida con el ID recibido en la URL
   const event = events.find(e => e.id === req.params.id);
+  
+  // Si no se encuentra, retornamos un error 404
   if (!event) {
     return res.status(404).json({ error: 'Evento no encontrado' });
   }
+  
+  // Retornamos la información del evento hallado
   res.json(event);
 });
 
+// Ruta POST para registrar a un asistente en un evento específico
 app.post('/api/events/:id/register', (req, res) => {
-  const { id } = req.params;
-  const { nombre, correo, telefono } = req.body;
+  const { id } = req.params; // ID del evento
+  const { nombre, correo, telefono } = req.body; // Datos enviados desde el formulario
 
+  // Validación: confirmamos que no falte ningún campo obligatorio
   if (!nombre || !correo || !telefono) {
     return res.status(400).json({ error: 'Todos los campos (nombre, correo y teléfono) son obligatorios.' });
   }
 
+  // Verificamos que el evento exista en nuestra lista
   const targetEvent = events.find(e => e.id === id);
   if (!targetEvent) {
     return res.status(404).json({ error: 'El evento especificado no existe.' });
   }
 
+  // Verificamos que queden cupos disponibles
   if (targetEvent.availableSpots <= 0) {
     return res.status(400).json({ error: 'No quedan cupos disponibles para este evento.' });
   }
 
+  // Evitamos que una persona se inscriba dos veces al mismo evento con el mismo correo
   const existing = attendees.find(a => a.eventId === id && a.correo.toLowerCase() === correo.trim().toLowerCase());
   if (existing) {
     return res.status(400).json({ error: 'Este correo electrónico ya se encuentra registrado en este evento.' });
   }
 
+  // Descontamos un cupo disponible en el evento
   targetEvent.availableSpots -= 1;
 
+  // Creamos el objeto del nuevo asistente
   const newAttendee = {
-    id: `att-${Date.now()}`,
+    id: `att-${Date.now()}`, // Generamos un ID único basado en el tiempo actual
     eventId: id,
     nombre: nombre.trim(),
     correo: correo.trim(),
@@ -178,8 +205,10 @@ app.post('/api/events/:id/register', (req, res) => {
     registeredAt: new Date().toISOString()
   };
 
+  // Guardamos el nuevo registro en el arreglo global
   attendees.push(newAttendee);
 
+  // Respondemos con estatus 201 (Creado) y la confirmación
   res.status(201).json({
     message: 'Inscripción realizada con éxito. Se ha registrado tu cupo.',
     attendee: newAttendee,
@@ -187,7 +216,9 @@ app.post('/api/events/:id/register', (req, res) => {
   });
 });
 
+// Ruta GET para consultar estadísticas globales sobre los eventos
 app.get('/api/stats', (req, res) => {
+  // Retornamos el total de eventos y la cantidad filtrada por cada modalidad
   res.json({
     totalEvents: events.length,
     presenciales: events.filter(e => e.modality === 'Presencial').length,
@@ -196,6 +227,7 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
+// Iniciamos el servidor express en el puerto configurado
 app.listen(PORT, () => {
   console.log(`[CalendarUnite Backend] Servidor activo en http://localhost:${PORT}`);
 });

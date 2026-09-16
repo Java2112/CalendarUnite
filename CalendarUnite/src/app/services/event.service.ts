@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { EventItem, RegisterRequest, StatsSummary } from '../models/event.model';
 
+// Arreglo de eventos en memoria utilizado como datos de prueba / respaldo (Mock Data)
 const MOCK_EVENTS: EventItem[] = [
   {
     id: 'evt-100',
@@ -111,16 +112,20 @@ const MOCK_EVENTS: EventItem[] = [
   }
 ];
 
+// Decorador que permite inyectar este servicio en cualquier lugar del proyecto (Singleton global)
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
+  // URL base del backend Node.js / Express
   private apiUrl = 'http://localhost:3000/api';
 
-  public events = signal<EventItem[]>(MOCK_EVENTS);
-  public selectedEvent = signal<EventItem | null>(null);
-  public isLoading = signal<boolean>(false);
+  // Signals reactivas para el estado global de la app
+  public events = signal<EventItem[]>(MOCK_EVENTS);            // Lista reactiva de eventos
+  public selectedEvent = signal<EventItem | null>(null);         // Evento seleccionado activamente
+  public isLoading = signal<boolean>(false);                     // Estado de carga (spinner/loader)
 
+  // Signal calculada (computed): recalcula las estadísticas automáticamente si cambia 'events'
   public stats = computed<StatsSummary>(() => {
     const list = this.events();
     return {
@@ -131,24 +136,32 @@ export class EventService {
     };
   });
 
+  // Inyectamos el cliente HTTP para hacer peticiones al backend
   constructor(private http: HttpClient) {}
 
+  // Consulta eventos al backend enviando parámetros opcionales de filtro por URL
   loadEvents(modality?: string, search?: string): Observable<EventItem[]> {
-    this.isLoading.set(true);
+    this.isLoading.set(true); // Activamos el estado de carga
     let params = new HttpParams();
+
+    // Si hay modalidad y no es "Todas", la agregamos como parámetro a la petición GET
     if (modality && modality !== 'Todas') {
       params = params.set('modality', modality);
     }
+    // Si hay término de búsqueda, lo agregamos limpio de espacios a los parámetros
     if (search && search.trim() !== '') {
       params = params.set('search', search.trim());
     }
 
+    // Petición GET al servidor backend con fallback defensivo
     return this.http.get<EventItem[]>(`${this.apiUrl}/events`, { params }).pipe(
       tap({
+        // Si el servidor responde con éxito, actualizamos la Signal con la lista devuelta
         next: (data) => {
           this.events.set(data);
           this.isLoading.set(false);
         },
+        // Fallback: Si el backend está apagado o falla, filtramos localmente sobre MOCK_EVENTS
         error: () => {
           let list = [...MOCK_EVENTS];
           if (modality && modality !== 'Todas') {
@@ -162,15 +175,18 @@ export class EventService {
               e.category.toLowerCase().includes(q)
             );
           }
-          this.events.set(list);
+          this.events.set(list); // Guardamos la lista simulada
           this.isLoading.set(false);
         }
       })
     );
   }
 
+  // Registra la inscripción de un usuario de forma optimista localmente y envía la petición POST
   registerForEvent(eventId: string, registrationData: RegisterRequest): Observable<{ message: string; updatedAvailableSpots: number }> {
     let newSpots = 0;
+
+    // Actualización optimista: descontamos inmediatamente el cupo en la lista en memoria
     this.events.update(list => list.map(e => {
       if (e.id === eventId && e.availableSpots > 0) {
         newSpots = e.availableSpots - 1;
@@ -179,11 +195,13 @@ export class EventService {
       return e;
     }));
 
+    // Obtenemos los cupos actualizados
     const target = this.events().find(e => e.id === eventId);
     if (target) {
       newSpots = target.availableSpots;
     }
 
+    // Si el evento modificado es el que está abierto en el modal, actualizamos también su Signal
     if (this.selectedEvent()?.id === eventId) {
       const current = this.selectedEvent();
       if (current) {
@@ -191,10 +209,12 @@ export class EventService {
       }
     }
 
+    // Enviamos en segundo plano la petición POST al backend para guardar la inscripción en el servidor
     this.http.post(`${this.apiUrl}/events/${eventId}/register`, registrationData).pipe(
-      catchError(() => of(null))
+      catchError(() => of(null)) // Capturamos cualquier error silenciosamente para no romper la UX
     ).subscribe();
 
+    // Retornamos una respuesta inmediata (Observable) a la vista de la interfaz
     return of({
       message: 'Inscripción realizada con éxito. Se ha registrado tu cupo.',
       updatedAvailableSpots: newSpots

@@ -7,13 +7,17 @@ import { EventItem } from '../../models/event.model';
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule], // Importamos CommonModule para directivas y FormsModule para los inputs
   template: `
+    <!-- Fondo oscuro transparente (backdrop); al hacer clic afuera emite el evento 'close' -->
     <div class="modal-backdrop" (click)="close.emit()">
+      <!-- Contenedor del modal; stopPropagation evita que dar clic dentro lo cierre -->
       <div class="modal-content" (click)="$event.stopPropagation()">
         
+        <!-- Botón superior 'X' para cerrar la ventana -->
         <button (click)="close.emit()" class="modal-close-btn" title="Cerrar modal">&times;</button>
 
+        <!-- Encabezado con la imagen principal del evento e insignias (modalidad y categoría) -->
         <div class="modal-header">
           <div class="event-hero-image" [style.backgroundImage]="'url(' + event.imageUrl + ')'">
             <div class="image-overlay">
@@ -28,6 +32,7 @@ import { EventItem } from '../../models/event.model';
         <div class="modal-body">
           <h2 class="modal-title">{{ event.title }}</h2>
 
+          <!-- Grilla con la información técnica: Organizador, Fecha/Hora, Lugar y Cupos -->
           <div class="event-meta-grid">
             <div class="meta-item">
               <div class="meta-text">
@@ -53,6 +58,7 @@ import { EventItem } from '../../models/event.model';
             <div class="meta-item">
               <div class="meta-text">
                 <label>Disponibilidad</label>
+                <!-- Si quedan 3 cupos o menos, le aplica la clase de alerta roja -->
                 <strong [class.text-danger]="event.availableSpots <= 3">
                   {{ event.availableSpots }} cupos disponibles de {{ event.totalSpots }}
                 </strong>
@@ -60,17 +66,20 @@ import { EventItem } from '../../models/event.model';
             </div>
           </div>
 
+          <!-- Caja con el texto explicativo o descripción completa del evento -->
           <div class="description-box">
             <h3>Especificaciones de la Actividad</h3>
             <p>{{ event.description }}</p>
           </div>
 
+          <!-- Sección del formulario de registro -->
           <div class="registration-section">
             <div class="form-title">
               <h3>Formulario de Inscripción Estudiantil</h3>
               <p>Ingresa tus datos de contacto para formalizar tu registro en esta actividad:</p>
             </div>
 
+            <!-- Alerta verde de éxito cuando el servidor confirma el registro -->
             @if (successMessage) {
               <div class="alert-success">
                 <div>
@@ -80,13 +89,16 @@ import { EventItem } from '../../models/event.model';
               </div>
             }
 
+            <!-- Si aún no hay mensaje de éxito, mostramos el formulario o errores -->
             @if (!successMessage) {
+              <!-- Alerta roja de error si falla la validación o el backend responde con error -->
               @if (errorMessage) {
                 <div class="alert-danger">
                   {{ errorMessage }}
                 </div>
               }
 
+              <!-- Formulario de inscripción; ngSubmit ejecuta submitRegistration() al enviar -->
               <form (ngSubmit)="submitRegistration()" class="register-form">
                 <div class="form-group">
                   <label for="nombre">Nombre Completo *</label>
@@ -124,6 +136,7 @@ import { EventItem } from '../../models/event.model';
                 </div>
 
                 <div class="form-actions">
+                  <!-- Botón de envío; se deshabilita si se está enviando o si no quedan cupos -->
                   <button 
                     type="submit" 
                     [disabled]="isSubmitting || event.availableSpots <= 0" 
@@ -147,27 +160,35 @@ import { EventItem } from '../../models/event.model';
   `
 })
 export class EventDetailComponent implements OnInit {
+  // Recibe la información del evento desde el componente padre
   @Input() event!: EventItem;
+  // Notifica al componente padre cuando el usuario decide cerrar la ventana
   @Output() close = new EventEmitter<void>();
 
+  // Objeto enlazado a los campos del formulario con [(ngModel)]
   regData = {
     nombre: '',
     correo: '',
     telefono: ''
   };
 
+  // Variables de control de estado del formulario y mensajes de respuesta
   isSubmitting = false;
   successMessage = '';
   errorMessage = '';
 
+  // Inyectamos el servicio HTTP que conecta con la API del backend
   constructor(public eventService: EventService) {}
 
+  // Al abrir el modal, reiniciamos los mensajes
   ngOnInit(): void {
     this.errorMessage = '';
     this.successMessage = '';
   }
 
+  // Método ejecutado al enviar el formulario
   submitRegistration(): void {
+    // Validamos en el frontend que no haya campos vacíos
     if (!this.regData.nombre || !this.regData.correo || !this.regData.telefono) {
       this.errorMessage = 'Por favor ingrese su nombre completo, correo institucional y número de teléfono.';
       return;
@@ -176,14 +197,16 @@ export class EventDetailComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
 
+    // Llamamos al servicio enviando el ID del evento y los datos del estudiante
     this.eventService.registerForEvent(this.event.id, this.regData).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        this.successMessage = res.message;
-        this.event.availableSpots = res.updatedAvailableSpots;
+        this.successMessage = res.message; // Mostramos el mensaje exitoso del backend
+        this.event.availableSpots = res.updatedAvailableSpots; // Actualizamos los cupos restantes en la vista
       },
       error: (err) => {
         this.isSubmitting = false;
+        // Mostramos el mensaje de error devuelto por la API
         this.errorMessage = err.error?.error || 'Ocurrió un error al procesar el registro.';
       }
     });

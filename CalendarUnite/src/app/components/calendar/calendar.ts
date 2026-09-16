@@ -4,21 +4,23 @@ import { FormsModule } from '@angular/forms';
 import { EventService } from '../../services/event.service';
 import { EventItem, ModalityType } from '../../models/event.model';
 
+// Interfaz que define la estructura de cada celda/día en la cuadrícula del calendario
 export interface CalendarDay {
-  dayNumber: number;
-  dateStr: string;
-  isCurrentMonth: boolean;
-  hasEvents: boolean;
-  events: EventItem[];
-  eventCategories: string[];
+  dayNumber: number;          // Número del día (ej. 1, 15, 30)
+  dateStr: string;            // Fecha en formato texto "AAAA-MM-DD"
+  isCurrentMonth: boolean;    // Indica si el día pertenece al mes que se está viendo
+  hasEvents: boolean;         // 'true' si hay eventos programados en este día
+  events: EventItem[];        // Lista de eventos de ese día
+  eventCategories: string[]; // Categorías presentes para pintar los puntos de colores
 }
 
 @Component({
   selector: 'app-calendar',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  standalone: true, // Componente independiente (Angular 14+)
+  imports: [CommonModule, FormsModule], // Importamos las directivas básicas y soporte para formularios (ngModel)
   template: `
     <div class="dashboard-container">
+      <!-- Sección principal del Banner con el título y estadísticas -->
       <section class="hero-banner">
         <div class="hero-content">
           <span class="hero-badge">Portal Oficial de Actividades Extracurriculares</span>
@@ -27,6 +29,7 @@ export interface CalendarDay {
             Consulta y participa en las jornadas de salud mental, actividades deportivas, talleres culturales y eventos institucionales disponibles para la comunidad estudiantil.
           </p>
           
+          <!-- Tarjetas de Estadísticas Globales (Obtenidas dinámicamente desde el EventService) -->
           <div class="stats-grid">
             <div class="stat-card">
               <span class="stat-num">{{ totalEventsCount }}</span>
@@ -48,7 +51,9 @@ export interface CalendarDay {
         </div>
       </section>
 
+      <!-- Barra de Filtros: Buscador por texto, botones de modalidad y cambio de vista -->
       <div class="controls-bar">
+        <!-- Campo de búsqueda en texto libre -->
         <div class="search-box">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input 
@@ -58,6 +63,7 @@ export interface CalendarDay {
             placeholder="Buscar por título, categoría o palabra clave..." />
         </div>
 
+        <!-- Botones (Chips) para filtrar por modalidad -->
         <div class="modality-filters">
           @for (mod of modalities; track mod) {
             <button 
@@ -69,6 +75,7 @@ export interface CalendarDay {
           }
         </div>
 
+        <!-- Botones para alternar la vista entre cuadrícula (grid) y lista (list) -->
         <div class="view-toggle">
           <button [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" title="Vista de Cuadrícula">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -79,9 +86,11 @@ export interface CalendarDay {
         </div>
       </div>
 
+      <!-- Layout principal: Columna izquierda (Calendario) + Columna derecha (Tarjetas de eventos) -->
       <div class="calendar-layout-grid">
         <aside class="calendar-sidebar">
           <div class="calendar-widget-card">
+            <!-- Encabezado del Widget con mes, año y botones de navegación de mes -->
             <div class="calendar-header">
               <h2>{{ currentMonthName }} {{ currentYear }}</h2>
               <div class="calendar-nav-buttons">
@@ -90,6 +99,7 @@ export interface CalendarDay {
               </div>
             </div>
 
+            <!-- Encabezado con las iniciales de los días de la semana -->
             <div class="calendar-weekdays">
               <span>L</span>
               <span>M</span>
@@ -100,6 +110,7 @@ export interface CalendarDay {
               <span>D</span>
             </div>
 
+            <!-- Renderizado dinámico de las celdas de días del mes -->
             <div class="calendar-days-grid">
               @for (cell of calendarDays; track cell.dateStr + '-' + cell.dayNumber) {
                 <div 
@@ -111,6 +122,7 @@ export interface CalendarDay {
                   
                   @if (cell.isCurrentMonth) {
                     <span class="day-number">{{ cell.dayNumber }}</span>
+                    <!-- Indicadores (puntos) de categorías de eventos en el día -->
                     @if (cell.hasEvents) {
                       <div class="day-dots">
                         @for (cat of cell.eventCategories; track cat) {
@@ -123,6 +135,7 @@ export interface CalendarDay {
               }
             </div>
 
+            <!-- Convención/Leyenda de colores según el tipo de categoría -->
             <div class="calendar-legend">
               <div class="legend-item">
                 <span class="dot-indicator dot-salud"></span>
@@ -142,6 +155,7 @@ export interface CalendarDay {
               </div>
             </div>
 
+            <!-- Botón para quitar el filtro por día específico -->
             @if (selectedDate) {
               <div class="reset-date-bar">
                 <button (click)="clearDateFilter()" class="btn-clear-date">
@@ -152,7 +166,9 @@ export interface CalendarDay {
           </div>
         </aside>
 
+        <!-- Sección Principal donde se muestran los Eventos -->
         <section class="events-main-section">
+          <!-- Título dinámico cuando hay un día seleccionado en el calendario -->
           @if (selectedDate) {
             <div class="selected-day-header">
               <h3>Actividades del día {{ selectedDateDisplay }}</h3>
@@ -160,12 +176,14 @@ export interface CalendarDay {
             </div>
           }
 
+          <!-- Mensaje mientras carga la información desde el backend -->
           @if (eventService.isLoading()) {
             <div class="loading-container">
               <p>Cargando información de actividades...</p>
             </div>
           }
 
+          <!-- Estado vacío cuando la búsqueda o fecha no arroja resultados -->
           @if (!eventService.isLoading() && filteredEvents.length === 0) {
             <div class="empty-state">
               <h3>No hay actividades programadas para esta fecha</h3>
@@ -174,6 +192,7 @@ export interface CalendarDay {
             </div>
           }
 
+          <!-- Listado o Grilla de Eventos -->
           @if (!eventService.isLoading() && filteredEvents.length > 0) {
             <div [class.events-grid]="viewMode === 'grid'" [class.events-list]="viewMode === 'list'">
               @for (evt of filteredEvents; track evt.id) {
@@ -226,19 +245,24 @@ export interface CalendarDay {
   `
 })
 export class CalendarComponent implements OnInit {
+  // Evento de salida para avisar al componente padre cuando el usuario selecciona un evento
   @Output() selectEvent = new EventEmitter<EventItem>();
 
+  // Opciones de filtros y estados locales de la interfaz
   modalities: ModalityType[] = ['Todas', 'Presencial', 'Virtual', 'Nocturna'];
   selectedModality: ModalityType = 'Todas';
   searchQuery: string = '';
-  viewMode: 'grid' | 'list' = 'grid';
+  viewMode: 'grid' | 'list' = 'grid'; // Modo de visualización alternable
 
+  // Control de fechas para la navegación del calendario (Inicia en Septiembre de 2026)
   currentDate: Date = new Date(2026, 8, 1);
   selectedDate: string | null = null;
   calendarDays: CalendarDay[] = [];
 
+  // Inyectamos el servicio global de eventos en el constructor
   constructor(public eventService: EventService) {}
 
+  // Getters para leer fácilmente los totales directamente desde el servicio
   get totalEventsCount(): number {
     return this.eventService.stats()?.totalEvents || 0;
   }
@@ -255,26 +279,31 @@ export class CalendarComponent implements OnInit {
     return this.eventService.stats()?.nocturnas || 0;
   }
 
+  // Al iniciar el componente, cargamos los datos del servidor y generamos la grilla del mes
   ngOnInit(): void {
     this.fetchData();
     this.buildCalendarGrid();
   }
 
+  // Retorna el nombre del mes actual en español
   get currentMonthName(): string {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return months[this.currentDate.getMonth()];
   }
 
+  // Retorna el año actual cargado
   get currentYear(): number {
     return this.currentDate.getFullYear();
   }
 
+  // Formatea la fecha seleccionada a DD/MM/AAAA para mostrar en el título
   get selectedDateDisplay(): string {
     if (!this.selectedDate) return '';
     const parts = this.selectedDate.split('-');
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
+  // Filtra los eventos traídos del servicio si hay un día particular seleccionado
   get filteredEvents(): EventItem[] {
     let list = this.eventService.events();
     if (this.selectedDate) {
@@ -283,21 +312,25 @@ export class CalendarComponent implements OnInit {
     return list;
   }
 
+  // Llama al servicio para obtener los eventos aplicando los filtros actuales de modalidad y texto
   fetchData(): void {
     this.eventService.loadEvents(this.selectedModality, this.searchQuery).subscribe({
-      next: () => this.buildCalendarGrid()
+      next: () => this.buildCalendarGrid() // Al terminar de cargar, reconstruimos el calendario
     });
   }
 
+  // Cambia la modalidad activa y vuelve a cargar los datos
   setModality(mod: ModalityType): void {
     this.selectedModality = mod;
     this.fetchData();
   }
 
+  // Evento al escribir en la barra de búsqueda
   onFilterChange(): void {
     this.fetchData();
   }
 
+  // Restablece todos los filtros de búsqueda a su estado inicial
   resetFilters(): void {
     this.selectedModality = 'Todas';
     this.searchQuery = '';
@@ -305,33 +338,39 @@ export class CalendarComponent implements OnInit {
     this.fetchData();
   }
 
+  // Elimina la selección del día actual para volver a mostrar el mes completo
   clearDateFilter(): void {
     this.selectedDate = null;
   }
 
+  // Retrocede un mes en el calendario
   prevMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
     this.buildCalendarGrid();
   }
 
+  // Avanza un mes en el calendario
   nextMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
     this.buildCalendarGrid();
   }
 
+  // Selecciona o deselecciona un día específico al hacer clic en una celda
   selectCalendarDay(cell: CalendarDay): void {
     if (!cell.isCurrentMonth) return;
     if (this.selectedDate === cell.dateStr) {
-      this.selectedDate = null;
+      this.selectedDate = null; // Si ya estaba seleccionado, lo deselecciona
     } else {
       this.selectedDate = cell.dateStr;
     }
   }
 
+  // Algoritmo para construir las celdas del mes actual con sus respectivos desfases de días
   buildCalendarGrid(): void {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
 
+    // Calculamos en qué día de la semana cae el primer día del mes (Ajustado para comenzar en Lunes)
     const firstDayIndex = new Date(year, month, 1).getDay();
     const paddingDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
@@ -340,6 +379,7 @@ export class CalendarComponent implements OnInit {
 
     const cells: CalendarDay[] = [];
 
+    // Agregamos celdas vacías de relleno (días pertenecientes al mes anterior)
     for (let i = 0; i < paddingDays; i++) {
       cells.push({
         dayNumber: 0,
@@ -351,11 +391,13 @@ export class CalendarComponent implements OnInit {
       });
     }
 
+    // Generamos cada uno de los días pertenecientes al mes actual
     for (let day = 1; day <= daysInMonth; day++) {
       const dayStr = day < 10 ? `0${day}` : `${day}`;
       const monthStr = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
       const fullDateStr = `${year}-${monthStr}-${dayStr}`;
 
+      // Buscamos si hay eventos para este día concreto
       const dayEvents = allEvents.filter(e => e.date === fullDateStr);
       const categories = Array.from(new Set(dayEvents.map(e => e.category)));
 
@@ -372,6 +414,7 @@ export class CalendarComponent implements OnInit {
     this.calendarDays = cells;
   }
 
+  // Devuelve la clase CSS adecuada para asignar un color al punto del calendario según la categoría
   getDotClass(category: string): string {
     if (category.includes('Psicología') || category.includes('Salud')) return 'dot-salud';
     if (category.includes('Deportes')) return 'dot-deporte';
@@ -379,6 +422,7 @@ export class CalendarComponent implements OnInit {
     return 'dot-desarrollo';
   }
 
+  // Emite el evento seleccionado hacia el componente padre
   onSelect(evt: EventItem): void {
     this.selectEvent.emit(evt);
   }
