@@ -1,59 +1,82 @@
-# CalendarUnite
+# CalendarUnite - Bienestar Universitario (Sprint 1)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.8.
+CalendarUnite es una aplicación híbrida (móvil y web) diseñada para centralizar, promover y gestionar la participación estudiantil en las actividades extracurriculares de Bienestar Universitario (salud mental, deportes, cultura, talleres artísticos y eventos nocturnos).
 
-## Development server
+---
 
-To start a local development server, run:
+## 🛠️ Tecnologías Utilizadas
 
-```bash
-ng serve
-```
+- **Frontend**: Angular 22+, TypeScript, RxJS, Angular Signals (`signal`, `computed`), Sintaxis Moderna de Control Flow (`@if`, `@for`).
+- **Backend**: Node.js, Express, CORS API REST.
+- **Estilos**: CSS3 con Variables Nativas y Diseño Adaptable (Responsive).
+- **Colores Institucionales**:
+  - 🔵 **Azul Institucional (`#0F228C`)**: Encabezados, navegación, estructura y acentos principales.
+  - 🔴 **Rojo Institucional (`#D9043D`)**: Botones de acción principal (CTA), inscripciones e indicadores destacados.
+  - ⚪ **Blanco (`#FFFFFF`)**: Fondo limpio para tarjetas, superficies y ventanas modales.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## 📁 Estructura del Proyecto y Explicación de Archivos
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### 🖥️ Servidor Backend (`server/`)
 
-```bash
-ng generate component component-name
-```
+- **`server/server.js`**: Servidor API REST en Node.js y Express (Puerto 3000). Proporciona los endpoints HTTP:
+  - `GET /api/events`: Retorna el catálogo de eventos con soporte para filtrado por modalidad (*Presencial*, *Virtual*, *Nocturna*) y búsqueda por palabras clave.
+  - `GET /api/events/:id`: Entrega los detalles y especificaciones completas de un evento.
+  - `POST /api/events/:id/register`: Procesa la inscripción del estudiante (`nombre`, `correo`, `telefono`), descuenta 1 cupo disponible en el evento y almacena el registro del asistente.
+  - `GET /api/stats`: Proporciona las estadísticas globales de actividades publicadas y modalidades.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- **`server/package.json`**: Define las dependencias del backend (`express`, `cors`).
 
-```bash
-ng generate --help
-```
+---
 
-## Building
+### 🎨 Aplicación Frontend (`src/app/`)
 
-To build the project run:
+- **`src/app/models/event.model.ts`**: Define las interfaces y tipos fuertemente tipados de TypeScript:
+  - `EventItem`: Estructura de un evento (título, categoría, organizador, modalidad, fecha, horario, lugar, cupos totales y disponibles, descripción e imagen).
+  - `RegisterRequest`: Campos requeridos para la inscripción estudiantil (`nombre`, `correo`, `telefono`).
+  - `StatsSummary`: Totales y conteo por modalidad para las tarjetas de estadísticas.
 
-```bash
-ng build
-```
+- **`src/app/services/event.service.ts`**: Servicio inyectable de Angular encargado de la gestión de estado y peticiones HTTP:
+  - Maneja las señales reactivas `events` e `isLoading`.
+  - Calcula automáticamente mediante un Signal Computado (`computed()`) las estadísticas en tiempo real.
+  - Incluye un mecanismo de datos *MOCK* de respaldo para que la aplicación funcione e inscriba estudiantes inmediatamente incluso si el servidor backend no estuviera encendido durante una demostración.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+- **`src/app/components/navbar/navbar.ts`**: Componente de la barra de navegación superior institucional con el logotipo de CalendarUnite, título oficial de Bienestar Universitario e indicador del portal de consulta.
 
-## Running unit tests
+- **`src/app/components/calendar/calendar.ts`**: Componente principal del dashboard interactivo:
+  - **Banner e Historial de Estadísticas**: Tarjetas que muestran los eventos publicados, modalidades presenciales, virtuales y jornada nocturna.
+  - **Widget de Calendario Mensual**: Rejilla mensual interactiva con iniciales de la semana (`L`, `M`, `X`, `J`, `V`, `S`, `D`), navegación entre meses e indicadores con puntos de colores (`•`) según la categoría de la actividad.
+  - **Filtro por Día del Calendario**: Al hacer clic en una fecha específica, resalta el día en Azul Institucional y filtra las actividades programadas para ese día.
+  - **Filtros por Modalidad y Buscador**: Filtros rápidos (*Presencial*, *Virtual*, *Nocturna*) y caja de búsqueda en tiempo real.
+  - **Alternador de Vista**: Permite cambiar la visualización entre cuadrícula de tarjetas (Grid) y lista.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- **`src/app/components/event-detail/event-detail.ts`**: Modal de detalles del evento:
+  - Muestra la imagen promocional, organizador, horario, lugar, categoría, modalidad y especificaciones detalladas.
+  - Contiene el **Formulario de Inscripción Estudiantil** (`Nombre Completo`, `Correo Institucional`, `Teléfono`).
+  - Al confirmar, descuenta inmediatamente el cupo disponible y muestra el mensaje de confirmación exitosa.
 
-```bash
-ng test
-```
+- **`src/app/app.ts` & `src/app/app.html`**: Componente raíz standalone que orquesta la barra de navegación, el calendario interactivo y la apertura/cierre del modal de detalles.
 
-## Running end-to-end tests
+- **`src/styles.css`**: Hoja de estilos global con la paleta de colores institucionales, estilos responsivos para móvil y web, y reglas del widget de calendario.
 
-For end-to-end (e2e) testing, run:
+- **`package.json`**: Archivo de configuración del proyecto con los scripts de ejecución:
+  - `npm start`: Inicia la aplicación Angular en `http://localhost:4200`.
+  - `npm run server`: Inicia la API REST Node.js en `http://localhost:3000`.
+  - `npm run build`: Compila la aplicación Angular para producción.
 
-```bash
-ng e2e
-```
+---
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## ⚡ Instrucciones de Ejecución
 
-## Additional Resources
+1. **Paso 1 - Iniciar el Backend (Terminal 1)**:
+   ```bash
+   npm run server
+   ```
+   > Salida: `[CalendarUnite Backend] Servidor activo en http://localhost:3000`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+2. **Paso 2 - Iniciar el Frontend (Terminal 2)**:
+   ```bash
+   npm start
+   ```
+   Abre en el navegador: `http://localhost:4200`.

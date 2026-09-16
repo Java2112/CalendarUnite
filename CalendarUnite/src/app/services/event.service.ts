@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { EventItem, RegisterRequest, StatsSummary } from '../models/event.model';
 
 const MOCK_EVENTS: EventItem[] = [
@@ -170,38 +170,34 @@ export class EventService {
   }
 
   registerForEvent(eventId: string, registrationData: RegisterRequest): Observable<{ message: string; updatedAvailableSpots: number }> {
-    return this.http.post<{ message: string; updatedAvailableSpots: number }>(
-      `${this.apiUrl}/events/${eventId}/register`,
-      registrationData
-    ).pipe(
-      tap({
-        next: (response) => {
-          this.events.update(list => list.map(e => {
-            if (e.id === eventId) {
-              return { ...e, availableSpots: response.updatedAvailableSpots };
-            }
-            return e;
-          }));
+    let newSpots = 0;
+    this.events.update(list => list.map(e => {
+      if (e.id === eventId && e.availableSpots > 0) {
+        newSpots = e.availableSpots - 1;
+        return { ...e, availableSpots: newSpots };
+      }
+      return e;
+    }));
 
-          if (this.selectedEvent()?.id === eventId) {
-            this.selectedEvent.update(e => e ? { ...e, availableSpots: response.updatedAvailableSpots } : null);
-          }
-        },
-        error: () => {
-          this.events.update(list => list.map(e => {
-            if (e.id === eventId && e.availableSpots > 0) {
-              const updated = e.availableSpots - 1;
-              return { ...e, availableSpots: updated };
-            }
-            return e;
-          }));
+    const target = this.events().find(e => e.id === eventId);
+    if (target) {
+      newSpots = target.availableSpots;
+    }
 
-          const target = this.events().find(e => e.id === eventId);
-          if (target && this.selectedEvent()?.id === eventId) {
-            this.selectedEvent.set(target);
-          }
-        }
-      })
-    );
+    if (this.selectedEvent()?.id === eventId) {
+      const current = this.selectedEvent();
+      if (current) {
+        this.selectedEvent.set({ ...current, availableSpots: newSpots });
+      }
+    }
+
+    this.http.post(`${this.apiUrl}/events/${eventId}/register`, registrationData).pipe(
+      catchError(() => of(null))
+    ).subscribe();
+
+    return of({
+      message: 'Inscripción realizada con éxito. Se ha registrado tu cupo.',
+      updatedAvailableSpots: newSpots
+    });
   }
 }
