@@ -1,12 +1,30 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { NavbarComponent } from './components/navbar/navbar';
+import { CalendarComponent } from './components/calendar/calendar';
+import { EventDetailComponent } from './components/event-detail/event-detail';
+import { EventItem } from './models/event.model';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.css',
+  standalone: true,
+  imports: [
+    CommonModule,
+    NavbarComponent,
+    CalendarComponent,
+    EventDetailComponent
+  ],
   templateUrl: './app.html',
+  styleUrl: './app.css'
 })
 export class App {
-  protected readonly title = signal('CalendarUnite');
+  selectedEvent: EventItem | null = null;
+
+  onSelectEvent(event: EventItem): void {
+    this.selectedEvent = event;
+  }
+
+  closeEventModal(): void {
+    this.selectedEvent = null;
+  }
 }

@@ -1,0 +1,385 @@
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { EventService } from '../../services/event.service';
+import { EventItem, ModalityType } from '../../models/event.model';
+
+export interface CalendarDay {
+  dayNumber: number;
+  dateStr: string;
+  isCurrentMonth: boolean;
+  hasEvents: boolean;
+  events: EventItem[];
+  eventCategories: string[];
+}
+
+@Component({
+  selector: 'app-calendar',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="dashboard-container">
+      <section class="hero-banner">
+        <div class="hero-content">
+          <span class="hero-badge">Portal Oficial de Actividades Extracurriculares</span>
+          <h1>Cronograma de Actividades de Bienestar Universitario</h1>
+          <p>
+            Consulta y participa en las jornadas de salud mental, actividades deportivas, talleres culturales y eventos institucionales disponibles para la comunidad estudiantil.
+          </p>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-num">{{ totalEventsCount }}</span>
+              <span class="stat-label">Eventos Publicados</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num">{{ presencialesCount }}</span>
+              <span class="stat-label">Modalidad Presencial</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num">{{ virtualesCount }}</span>
+              <span class="stat-label">Modalidad Virtual</span>
+            </div>
+            <div class="stat-card accent">
+              <span class="stat-num">{{ nocturnasCount }}</span>
+              <span class="stat-label">Jornada Nocturna</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="controls-bar">
+        <div class="search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery" 
+            (ngModelChange)="onFilterChange()" 
+            placeholder="Buscar por título, categoría o palabra clave..." />
+        </div>
+
+        <div class="modality-filters">
+          @for (mod of modalities; track mod) {
+            <button 
+              [class.active]="selectedModality === mod"
+              (click)="setModality(mod)"
+              class="chip-button">
+              {{ mod }}
+            </button>
+          }
+        </div>
+
+        <div class="view-toggle">
+          <button [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" title="Vista de Cuadrícula">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </button>
+          <button [class.active]="viewMode === 'list'" (click)="viewMode = 'list'" title="Vista de Lista">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="calendar-layout-grid">
+        <aside class="calendar-sidebar">
+          <div class="calendar-widget-card">
+            <div class="calendar-header">
+              <h2>{{ currentMonthName }} {{ currentYear }}</h2>
+              <div class="calendar-nav-buttons">
+                <button (click)="prevMonth()" class="btn-cal-nav" title="Mes anterior">&lt;</button>
+                <button (click)="nextMonth()" class="btn-cal-nav" title="Mes siguiente">&gt;</button>
+              </div>
+            </div>
+
+            <div class="calendar-weekdays">
+              <span>L</span>
+              <span>M</span>
+              <span>X</span>
+              <span>J</span>
+              <span>V</span>
+              <span>S</span>
+              <span>D</span>
+            </div>
+
+            <div class="calendar-days-grid">
+              @for (cell of calendarDays; track cell.dateStr + '-' + cell.dayNumber) {
+                <div 
+                  class="calendar-day-cell"
+                  [class.empty-cell]="!cell.isCurrentMonth"
+                  [class.has-events]="cell.hasEvents"
+                  [class.active]="selectedDate === cell.dateStr"
+                  (click)="selectCalendarDay(cell)">
+                  
+                  @if (cell.isCurrentMonth) {
+                    <span class="day-number">{{ cell.dayNumber }}</span>
+                    @if (cell.hasEvents) {
+                      <div class="day-dots">
+                        @for (cat of cell.eventCategories; track cat) {
+                          <span class="dot-indicator" [ngClass]="getDotClass(cat)"></span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="calendar-legend">
+              <div class="legend-item">
+                <span class="dot-indicator dot-salud"></span>
+                <span>Salud Mental</span>
+              </div>
+              <div class="legend-item">
+                <span class="dot-indicator dot-deporte"></span>
+                <span>Deporte</span>
+              </div>
+              <div class="legend-item">
+                <span class="dot-indicator dot-cultura"></span>
+                <span>Cultura</span>
+              </div>
+              <div class="legend-item">
+                <span class="dot-indicator dot-desarrollo"></span>
+                <span>Desarrollo</span>
+              </div>
+            </div>
+
+            @if (selectedDate) {
+              <div class="reset-date-bar">
+                <button (click)="clearDateFilter()" class="btn-clear-date">
+                  Ver eventos de todo el mes
+                </button>
+              </div>
+            }
+          </div>
+        </aside>
+
+        <section class="events-main-section">
+          @if (selectedDate) {
+            <div class="selected-day-header">
+              <h3>Actividades del día {{ selectedDateDisplay }}</h3>
+              <span class="events-count-badge">{{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'evento' : 'eventos' }}</span>
+            </div>
+          }
+
+          @if (eventService.isLoading()) {
+            <div class="loading-container">
+              <p>Cargando información de actividades...</p>
+            </div>
+          }
+
+          @if (!eventService.isLoading() && filteredEvents.length === 0) {
+            <div class="empty-state">
+              <h3>No hay actividades programadas para esta fecha</h3>
+              <p>Selecciona otro día en el calendario o filtra por modalidad.</p>
+              <button (click)="clearDateFilter()" class="btn-reset">Ver todos los eventos</button>
+            </div>
+          }
+
+          @if (!eventService.isLoading() && filteredEvents.length > 0) {
+            <div [class.events-grid]="viewMode === 'grid'" [class.events-list]="viewMode === 'list'">
+              @for (evt of filteredEvents; track evt.id) {
+                <div class="event-card" (click)="onSelect(evt)">
+                  <div class="card-image-wrapper">
+                    <img [src]="evt.imageUrl" [alt]="evt.title" class="card-img" />
+                    <div class="card-badges">
+                      <span class="badge-modality" [ngClass]="'mod-' + evt.modality.toLowerCase()">
+                        {{ evt.modality }}
+                      </span>
+                      <span class="badge-category">{{ evt.category }}</span>
+                    </div>
+                  </div>
+
+                  <div class="card-body">
+                    <div class="card-date-strip">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <span>{{ evt.date | date:'mediumDate' }} • {{ evt.time }}</span>
+                    </div>
+
+                    <h3 class="card-title">{{ evt.title }}</h3>
+                    
+                    <p class="card-description">
+                      {{ evt.description | slice:0:110 }}{{ evt.description.length > 110 ? '...' : '' }}
+                    </p>
+
+                    <div class="card-location">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>{{ evt.location }}</span>
+                    </div>
+
+                    <div class="card-footer">
+                      <div class="spots-info" [class.urgent]="evt.availableSpots <= 5">
+                        <span class="spots-count">{{ evt.availableSpots }}</span>
+                        <span class="spots-label">cupos disponibles de {{ evt.totalSpots }}</span>
+                      </div>
+
+                      <button class="btn-register-cta">
+                        Ver e Inscribirme
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  `
+})
+export class CalendarComponent implements OnInit {
+  @Output() selectEvent = new EventEmitter<EventItem>();
+
+  modalities: ModalityType[] = ['Todas', 'Presencial', 'Virtual', 'Nocturna'];
+  selectedModality: ModalityType = 'Todas';
+  searchQuery: string = '';
+  viewMode: 'grid' | 'list' = 'grid';
+
+  currentDate: Date = new Date(2026, 8, 1);
+  selectedDate: string | null = null;
+  calendarDays: CalendarDay[] = [];
+
+  constructor(public eventService: EventService) {}
+
+  get totalEventsCount(): number {
+    return this.eventService.stats()?.totalEvents || 0;
+  }
+
+  get presencialesCount(): number {
+    return this.eventService.stats()?.presenciales || 0;
+  }
+
+  get virtualesCount(): number {
+    return this.eventService.stats()?.virtuales || 0;
+  }
+
+  get nocturnasCount(): number {
+    return this.eventService.stats()?.nocturnas || 0;
+  }
+
+  ngOnInit(): void {
+    this.fetchData();
+    this.buildCalendarGrid();
+  }
+
+  get currentMonthName(): string {
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[this.currentDate.getMonth()];
+  }
+
+  get currentYear(): number {
+    return this.currentDate.getFullYear();
+  }
+
+  get selectedDateDisplay(): string {
+    if (!this.selectedDate) return '';
+    const parts = this.selectedDate.split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  get filteredEvents(): EventItem[] {
+    let list = this.eventService.events();
+    if (this.selectedDate) {
+      list = list.filter(e => e.date === this.selectedDate);
+    }
+    return list;
+  }
+
+  fetchData(): void {
+    this.eventService.loadEvents(this.selectedModality, this.searchQuery).subscribe({
+      next: () => this.buildCalendarGrid()
+    });
+  }
+
+  setModality(mod: ModalityType): void {
+    this.selectedModality = mod;
+    this.fetchData();
+  }
+
+  onFilterChange(): void {
+    this.fetchData();
+  }
+
+  resetFilters(): void {
+    this.selectedModality = 'Todas';
+    this.searchQuery = '';
+    this.selectedDate = null;
+    this.fetchData();
+  }
+
+  clearDateFilter(): void {
+    this.selectedDate = null;
+  }
+
+  prevMonth(): void {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+    this.buildCalendarGrid();
+  }
+
+  nextMonth(): void {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+    this.buildCalendarGrid();
+  }
+
+  selectCalendarDay(cell: CalendarDay): void {
+    if (!cell.isCurrentMonth) return;
+    if (this.selectedDate === cell.dateStr) {
+      this.selectedDate = null;
+    } else {
+      this.selectedDate = cell.dateStr;
+    }
+  }
+
+  buildCalendarGrid(): void {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const paddingDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const allEvents = this.eventService.events();
+
+    const cells: CalendarDay[] = [];
+
+    for (let i = 0; i < paddingDays; i++) {
+      cells.push({
+        dayNumber: 0,
+        dateStr: `pad-${i}`,
+        isCurrentMonth: false,
+        hasEvents: false,
+        events: [],
+        eventCategories: []
+      });
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayStr = day < 10 ? `0${day}` : `${day}`;
+      const monthStr = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
+      const fullDateStr = `${year}-${monthStr}-${dayStr}`;
+
+      const dayEvents = allEvents.filter(e => e.date === fullDateStr);
+      const categories = Array.from(new Set(dayEvents.map(e => e.category)));
+
+      cells.push({
+        dayNumber: day,
+        dateStr: fullDateStr,
+        isCurrentMonth: true,
+        hasEvents: dayEvents.length > 0,
+        events: dayEvents,
+        eventCategories: categories
+      });
+    }
+
+    this.calendarDays = cells;
+  }
+
+  getDotClass(category: string): string {
+    if (category.includes('Psicología') || category.includes('Salud')) return 'dot-salud';
+    if (category.includes('Deportes')) return 'dot-deporte';
+    if (category.includes('Cultura') || category.includes('Arte')) return 'dot-cultura';
+    return 'dot-desarrollo';
+  }
+
+  onSelect(evt: EventItem): void {
+    this.selectEvent.emit(evt);
+  }
+}
