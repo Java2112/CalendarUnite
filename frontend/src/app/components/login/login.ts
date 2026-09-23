@@ -2,7 +2,6 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { UserRole } from '../../models/user.model';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +27,7 @@ import { UserRole } from '../../models/user.model';
             </svg>
           </div>
           <h2 class="login-title">Acceso al Sistema</h2>
-          <p class="login-subtitle">Selecciona tu perfil institucional o ingresa tus credenciales</p>
+          <p class="login-subtitle">Ingresa tus credenciales institucionales para iniciar sesión</p>
         </div>
 
         <!-- Alerta de Error si falla el Login -->
@@ -36,57 +35,7 @@ import { UserRole } from '../../models/user.model';
           <span>⚠️ {{ errorMessage }}</span>
         </div>
 
-        <!-- SECCIÓN 1: Selección Rápida de Rol para Demostración -->
-        <div class="role-selector-section">
-          <label class="section-label">Acceso Rápido por Rol:</label>
-          <div class="role-cards-grid">
-            
-            <!-- Rol Líder -->
-            <button 
-              type="button" 
-              class="role-card" 
-              [class.active]="selectedRole === 'Lider'"
-              (click)="selectQuickRole('Lider')">
-              <div class="role-card-icon lider">🎓</div>
-              <div class="role-card-info">
-                <span class="role-name">Líder Estudiantil</span>
-                <span class="role-desc">Eventos de grupos y facultades</span>
-              </div>
-            </button>
-
-            <!-- Rol Bienestar -->
-            <button 
-              type="button" 
-              class="role-card" 
-              [class.active]="selectedRole === 'Bienestar'"
-              (click)="selectQuickRole('Bienestar')">
-              <div class="role-card-icon bienestar">🏥</div>
-              <div class="role-card-info">
-                <span class="role-name">Bienestar Universitario</span>
-                <span class="role-desc">Gestión integral de talleres y citas</span>
-              </div>
-            </button>
-
-            <!-- Rol Admin -->
-            <button 
-              type="button" 
-              class="role-card" 
-              [class.active]="selectedRole === 'Admin'"
-              (click)="selectQuickRole('Admin')">
-              <div class="role-card-icon admin">⚡</div>
-              <div class="role-card-info">
-                <span class="role-name">Administrador</span>
-                <span class="role-desc">Control general del sistema</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div class="divider">
-          <span>O ingresa con tus credenciales</span>
-        </div>
-
-        <!-- SECCIÓN 2: Formulario Tradicional -->
+        <!-- Formulario de Inicio de Sesión -->
         <form (ngSubmit)="onSubmitForm()" class="login-form">
           <div class="form-group">
             <label for="email">Correo Institucional</label>
@@ -145,7 +94,7 @@ import { UserRole } from '../../models/user.model';
     .login-modal {
       background: #ffffff;
       width: 100%;
-      max-width: 480px;
+      max-width: 420px;
       border-radius: 16px;
       padding: 28px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -210,95 +159,6 @@ import { UserRole } from '../../models/user.model';
       border-radius: 8px;
       font-size: 13px;
       margin-bottom: 18px;
-    }
-
-    .section-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
-    }
-
-    .role-cards-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .role-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      background: #ffffff;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s ease;
-    }
-
-    .role-card:hover {
-      border-color: #3b82f6;
-      background: #f8fafc;
-      transform: translateY(-1px);
-    }
-
-    .role-card.active {
-      border-color: #2563eb;
-      background: #eff6ff;
-    }
-
-    .role-card-icon {
-      font-size: 20px;
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .role-card-icon.lider { background: #fef3c7; }
-    .role-card-icon.bienestar { background: #dcfce7; }
-    .role-card-icon.admin { background: #fae8ff; }
-
-    .role-card-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .role-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-    }
-
-    .role-desc {
-      font-size: 11px;
-      color: #64748b;
-    }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 18px 0;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .divider span {
-      padding: 0 10px;
-      font-size: 12px;
-      color: #94a3b8;
     }
 
     .login-form {
@@ -378,57 +238,37 @@ export class LoginComponent {
 
   email = '';
   password = '';
-  selectedRole: UserRole | null = null;
   errorMessage = '';
   isLoading = false;
 
   constructor(private authService: AuthService) {}
-
-  selectQuickRole(role: UserRole): void {
-    this.selectedRole = role;
-    this.errorMessage = '';
-    
-    // Rellenar automáticamente datos de prueba para mayor comodidad
-    if (role === 'Admin') {
-      this.email = 'admin@unite.edu.co';
-      this.password = 'admin123';
-    } else if (role === 'Bienestar') {
-      this.email = 'bienestar@unite.edu.co';
-      this.password = 'bienestar123';
-    } else if (role === 'Lider') {
-      this.email = 'lider@unite.edu.co';
-      this.password = 'lider123';
-    }
-
-    // Iniciar sesión directamente al hacer clic en la tarjeta rápida
-    this.executeLogin({ role });
-  }
 
   onSubmitForm(): void {
     if (!this.email || !this.password) {
       this.errorMessage = 'Por favor ingresa tu correo y contraseña.';
       return;
     }
-    this.executeLogin({ email: this.email, password: this.password });
-  }
-
-  private executeLogin(credentials: { email?: string; password?: string; role?: UserRole }): void {
+    
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.authService.login(credentials).subscribe({
+    this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (res) => {
         this.isLoading = false;
         if (res && res.user) {
           this.authService.closeLoginModal();
           this.close.emit();
         } else {
-          this.errorMessage = 'No se pudo iniciar sesión. Verifica las credenciales.';
+          this.errorMessage = 'No se pudo iniciar sesión. Verifica tus credenciales.';
         }
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        this.errorMessage = 'Error en la autenticación. Intenta nuevamente.';
+        if (err.status === 401) {
+          this.errorMessage = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+        } else {
+          this.errorMessage = 'No se pudo conectar con el servidor Backend. Verifica que esté encendido.';
+        }
       }
     });
   }
