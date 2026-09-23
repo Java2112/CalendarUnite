@@ -56,16 +56,39 @@ import { AuthService } from '../../services/auth.service';
               class="form-input" />
           </div>
 
+          <!-- Campo de Contraseña con botón de ojito (Mostrar/Ocultar) -->
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
-              [(ngModel)]="password" 
-              name="password" 
-              placeholder="••••••••" 
-              required
-              class="form-input" />
+            <div class="password-input-wrapper">
+              <input 
+                [type]="showPassword() ? 'text' : 'password'" 
+                id="password" 
+                [(ngModel)]="password" 
+                name="password" 
+                placeholder="••••••••" 
+                required
+                class="form-input password-input" />
+              <button 
+                type="button" 
+                class="toggle-password-btn" 
+                (click)="togglePasswordVisibility()" 
+                [title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                @if (showPassword()) {
+                  <!-- Icono de Ojo Tachado (Ocultar contraseña) -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                } @else {
+                  <!-- Icono de Ojo Abierto (Mostrar contraseña) -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
 
           <!-- Botón submit reactivo con Signals -->
@@ -192,6 +215,38 @@ import { AuthService } from '../../services/auth.service';
       color: #333333;
     }
 
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .password-input-wrapper .form-input {
+      width: 100%;
+      padding-right: 42px;
+    }
+
+    .toggle-password-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .toggle-password-btn:hover {
+      color: #003366;
+      background: #f1f5f9;
+    }
+
     .form-input {
       padding: 10px 14px;
       border: 1.5px solid #d1d5db;
@@ -247,10 +302,17 @@ import { AuthService } from '../../services/auth.service';
   `]
 })
 export class LoginComponent {
+  // Evento emitido al cerrar el modal de inicio de sesión
   @Output() close = new EventEmitter<void>();
 
+  // Campos del formulario vinculados con ngModel
   email = '';
   password = '';
+
+  // Estado reactivo (Signals) para mostrar u ocultar la contraseña con el ojito
+  showPassword = signal<boolean>(false);
+
+  // Estado reactivo (Signals) para mensajes de error y loader
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(false);
 
@@ -258,6 +320,11 @@ export class LoginComponent {
     private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  // Alterna la visibilidad de la contraseña (texto vs contraseña)
+  togglePasswordVisibility(): void {
+    this.showPassword.update(val => !val);
+  }
 
   onSubmitForm(): void {
     if (!this.email || !this.password) {
