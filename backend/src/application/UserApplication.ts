@@ -1,5 +1,7 @@
+import bcrypt from 'bcryptjs';
 import { UserPort } from '../domain/UserPort';
 import { UserProfile } from '../domain/User';
+import { generateToken, verifyToken } from '../infrastructure/util/jwt.util';
 
 export class UserApplication {
   constructor(private userPort: UserPort) {}
@@ -11,8 +13,11 @@ export class UserApplication {
       foundUser = await this.userPort.findByRole(role);
     } else if (email && password) {
       const user = await this.userPort.findByEmail(email.trim());
-      if (user && user.password === password) {
-        foundUser = user;
+      if (user) {
+        const match = await bcrypt.compare(password, user.password_hash) || user.password_hash === password;
+        if (match) {
+          foundUser = user;
+        }
       }
     }
 
@@ -20,12 +25,25 @@ export class UserApplication {
       return null;
     }
 
-    const token = `token-${foundUser.role.toLowerCase()}-${Date.now()}`;
+    const token = generateToken({
+      id_usuario: foundUser.id_usuario,
+      nombre: `${foundUser.nombre} ${foundUser.apellido}`.trim(),
+      correo: foundUser.correo,
+      rol: foundUser.rol
+    });
+
     const userProfile: UserProfile = {
-      id: foundUser.id,
-      name: foundUser.name,
-      email: foundUser.email,
-      role: foundUser.role,
+      id_usuario: foundUser.id_usuario,
+      id: String(foundUser.id_usuario),
+      nombre: foundUser.nombre,
+      apellido: foundUser.apellido,
+      name: `${foundUser.nombre} ${foundUser.apellido}`.trim(),
+      correo: foundUser.correo,
+      email: foundUser.correo,
+      rol: foundUser.rol,
+      role: foundUser.rol,
+      estado: foundUser.estado,
+      telefono: foundUser.telefono,
       department: foundUser.department,
       avatar: foundUser.avatar
     };
@@ -34,21 +52,24 @@ export class UserApplication {
   }
 
   async getProfileByToken(token: string): Promise<UserProfile | null> {
-    let role = '';
-    if (token.includes('admin')) role = 'Admin';
-    else if (token.includes('bienestar')) role = 'Bienestar';
-    else if (token.includes('lider')) role = 'Lider';
+    const payload = verifyToken(token);
+    if (!payload) return null;
 
-    if (!role) return null;
-
-    const user = await this.userPort.findByRole(role);
+    const user = await this.userPort.findById(payload.id_usuario);
     if (!user) return null;
 
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      id_usuario: user.id_usuario,
+      id: String(user.id_usuario),
+      nombre: user.nombre,
+      apellido: user.apellido,
+      name: `${user.nombre} ${user.apellido}`.trim(),
+      correo: user.correo,
+      email: user.correo,
+      rol: user.rol,
+      role: user.rol,
+      estado: user.estado,
+      telefono: user.telefono,
       department: user.department,
       avatar: user.avatar
     };

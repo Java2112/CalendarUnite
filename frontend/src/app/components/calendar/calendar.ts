@@ -55,7 +55,13 @@ export interface CalendarDay {
       @if (eventService.backendError()) {
         <div class="backend-error-banner">
           <div class="error-content">
-            <span class="error-icon">⚠️</span>
+            <span class="error-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </span>
             <div>
               <strong>Error de conexión con el Servidor Backend:</strong>
               <p>{{ eventService.backendError() }}</p>
@@ -391,7 +397,7 @@ export class CalendarComponent implements OnInit {
       const fullDateStr = `${year}-${monthStr}-${dayStr}`;
 
       const dayEvents = allEvents.filter(e => e.date === fullDateStr);
-      const categories = Array.from(new Set(dayEvents.map(e => e.category)));
+      const categories = Array.from(new Set(dayEvents.map(e => e.category || 'General')));
 
       cells.push({
         dayNumber: day,

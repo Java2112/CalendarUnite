@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -30,10 +30,17 @@ import { AuthService } from '../../services/auth.service';
           <p class="login-subtitle">Ingresa tus credenciales institucionales para iniciar sesión</p>
         </div>
 
-        <!-- Alerta de Error si falla el Login -->
-        <div *ngIf="errorMessage" class="error-banner">
-          <span>⚠️ {{ errorMessage }}</span>
-        </div>
+        <!-- Alerta de Error si falla el Login (Sin emojis, con icono SVG limpio) -->
+        @if (errorMessage()) {
+          <div class="error-banner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
 
         <!-- Formulario de Inicio de Sesión -->
         <form (ngSubmit)="onSubmitForm()" class="login-form">
@@ -61,10 +68,13 @@ import { AuthService } from '../../services/auth.service';
               class="form-input" />
           </div>
 
-          <!-- Botón submit -->
-          <button type="submit" class="submit-btn" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Ingresar al Sistema</span>
-            <span *ngIf="isLoading" class="spinner">Verificando...</span>
+          <!-- Botón submit reactivo con Signals -->
+          <button type="submit" class="submit-btn" [disabled]="isLoading()">
+            @if (!isLoading()) {
+              <span>Ingresar al Sistema</span>
+            } @else {
+              <span class="spinner">Verificando...</span>
+            }
           </button>
         </form>
 
@@ -82,7 +92,7 @@ import { AuthService } from '../../services/auth.service';
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(10, 35, 66, 0.7);
       backdrop-filter: blur(4px);
       display: flex;
       justify-content: center;
@@ -109,7 +119,7 @@ import { AuthService } from '../../services/auth.service';
       background: none;
       border: none;
       font-size: 24px;
-      color: #64748b;
+      color: #555555;
       cursor: pointer;
       line-height: 1;
       padding: 4px;
@@ -117,7 +127,7 @@ import { AuthService } from '../../services/auth.service';
       transition: all 0.2s;
     }
     .close-btn:hover {
-      color: #0f172a;
+      color: #003366;
       background: #f1f5f9;
     }
 
@@ -129,8 +139,8 @@ import { AuthService } from '../../services/auth.service';
     .login-icon-badge {
       width: 52px;
       height: 52px;
-      background: #eff6ff;
-      color: #2563eb;
+      background: #e6eef5;
+      color: #003366;
       border-radius: 14px;
       display: inline-flex;
       align-items: center;
@@ -141,24 +151,27 @@ import { AuthService } from '../../services/auth.service';
     .login-title {
       font-size: 22px;
       font-weight: 700;
-      color: #0f172a;
+      color: #003366;
       margin: 0 0 6px 0;
     }
 
     .login-subtitle {
       font-size: 13px;
-      color: #64748b;
+      color: #555555;
       margin: 0;
     }
 
     .error-banner {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #dc2626;
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      color: #991b1b;
       padding: 10px 14px;
       border-radius: 8px;
       font-size: 13px;
       margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .login-form {
@@ -175,13 +188,13 @@ import { AuthService } from '../../services/auth.service';
 
     .form-group label {
       font-size: 13px;
-      font-weight: 500;
-      color: #334155;
+      font-weight: 600;
+      color: #333333;
     }
 
     .form-input {
       padding: 10px 14px;
-      border: 1px solid #cbd5e1;
+      border: 1.5px solid #d1d5db;
       border-radius: 8px;
       font-size: 14px;
       transition: all 0.2s;
@@ -189,14 +202,14 @@ import { AuthService } from '../../services/auth.service';
 
     .form-input:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      border-color: #003366;
+      box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.15);
     }
 
     .submit-btn {
       margin-top: 8px;
       padding: 12px;
-      background: #2563eb;
+      background: #003366;
       color: #ffffff;
       border: none;
       border-radius: 8px;
@@ -207,7 +220,7 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .submit-btn:hover {
-      background: #1d4ed8;
+      background: #0A2342;
     }
 
     .submit-btn:disabled {
@@ -218,8 +231,8 @@ import { AuthService } from '../../services/auth.service';
     .login-footer {
       margin-top: 20px;
       text-align: center;
-      font-size: 11px;
-      color: #94a3b8;
+      font-size: 12px;
+      color: #64748b;
     }
 
     @keyframes fadeIn {
@@ -238,37 +251,47 @@ export class LoginComponent {
 
   email = '';
   password = '';
-  errorMessage = '';
-  isLoading = false;
+  errorMessage = signal<string | null>(null);
+  isLoading = signal<boolean>(false);
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   onSubmitForm(): void {
     if (!this.email || !this.password) {
-      this.errorMessage = 'Por favor ingresa tu correo y contraseña.';
+      this.errorMessage.set('Por favor ingresa tu correo y contraseña.');
+      this.cdr.markForCheck();
       return;
     }
     
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.cdr.markForCheck();
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (res) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
+        this.cdr.markForCheck();
         if (res && res.user) {
           this.authService.closeLoginModal();
           this.close.emit();
         } else {
-          this.errorMessage = 'No se pudo iniciar sesión. Verifica tus credenciales.';
+          this.errorMessage.set('No se pudo iniciar sesión. Verifica tus credenciales.');
+          this.cdr.markForCheck();
         }
       },
       error: (err) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         if (err.status === 401) {
-          this.errorMessage = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+          this.errorMessage.set(err.error?.error || 'Credenciales inválidas. Verifica tu correo y contraseña.');
+        } else if (err.status === 403) {
+          this.errorMessage.set(err.error?.error || 'Tu cuenta se encuentra inactiva. Contacta al Administrador.');
         } else {
-          this.errorMessage = 'No se pudo conectar con el servidor Backend. Verifica que esté encendido.';
+          this.errorMessage.set('No se pudo conectar con el servidor Backend. Verifica que esté encendido.');
         }
+        this.cdr.markForCheck();
       }
     });
   }

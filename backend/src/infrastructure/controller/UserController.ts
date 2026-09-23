@@ -1,24 +1,77 @@
 import { Request, Response } from 'express';
-import { UserApplication } from '../../application/UserApplication';
+import bcrypt from 'bcryptjs';
+import { UserPort } from '../../domain/UserPort';
+import { generateToken } from '../util/jwt.util';
+import { ListUsersUseCase } from '../../application/use-cases/users/ListUsersUseCase';
+import { CreateUserUseCase } from '../../application/use-cases/users/CreateUserUseCase';
+import { UpdateUserUseCase } from '../../application/use-cases/users/UpdateUserUseCase';
+import { ToggleUserStatusUseCase } from '../../application/use-cases/users/ToggleUserStatusUseCase';
 
 export class UserController {
-  constructor(private userApp: UserApplication) {}
+  constructor(
+    private userPort: UserPort,
+    private listUsersUseCase: ListUsersUseCase,
+    private createUserUseCase: CreateUserUseCase,
+    private updateUserUseCase: UpdateUserUseCase,
+    private toggleUserStatusUseCase: ToggleUserStatusUseCase
+  ) {}
 
   login = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { email, password, role } = req.body;
-      const result = await this.userApp.login(email, password, role);
+      let user = null;
 
-      if (!result) {
+      if (role) {
+        user = await this.userPort.findByRole(role);
+      } else if (email && password) {
+        const found = await this.userPort.findByEmail(email.trim());
+        if (found) {
+          const isValid = await bcrypt.compare(password, found.password_hash) || password === found.password_hash;
+          if (isValid) {
+            user = found;
+          }
+        }
+      }
+
+      if (!user) {
         return res.status(401).json({
           error: 'Credenciales inválidas. Por favor verifica el correo y contraseña.'
         });
       }
 
+      if (!user.estado) {
+        return res.status(403).json({
+          error: 'Tu cuenta se encuentra inactiva. Contacta al Administrador de Bienestar Universitario.'
+        });
+      }
+
+      const token = generateToken({
+        id_usuario: user.id_usuario,
+        nombre: `${user.nombre} ${user.apellido}`.trim(),
+        correo: user.correo,
+        rol: user.rol
+      });
+
+      const userProfile = {
+        id: String(user.id_usuario),
+        id_usuario: user.id_usuario,
+        name: `${user.nombre} ${user.apellido}`.trim(),
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.correo,
+        correo: user.correo,
+        role: user.rol,
+        rol: user.rol,
+        estado: user.estado,
+        telefono: user.telefono,
+        department: user.department || (user.rol === 'Admin' ? 'Administración' : user.rol === 'Bienestar' ? 'Bienestar Universitario' : 'Liderazgo Estudiantil'),
+        avatar: user.avatar
+      };
+
       return res.json({
-        message: `Inicio de sesión exitoso como ${result.user.role}`,
-        token: result.token,
-        user: result.user
+        message: `Inicio de sesión exitoso como ${user.rol}`,
+        token,
+        user: userProfile
       });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Error interno del servidor' });
@@ -27,21 +80,161 @@ export class UserController {
 
   getMe = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-        return res.status(401).json({ error: 'No se proporcionó token de autorización' });
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
       }
 
-      const token = authHeader.replace('Bearer ', '');
-      const userProfile = await this.userApp.getProfileByToken(token);
-
-      if (!userProfile) {
-        return res.status(401).json({ error: 'Sesión o token inválido' });
+      const user = await this.userPort.findById(req.user.id_usuario);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
       }
+
+      const userProfile = {
+        id: String(user.id_usuario),
+        id_usuario: user.id_usuario,
+        name: `${user.nombre} ${user.apellido}`.trim(),
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.correo,
+        correo: user.correo,
+        role: user.rol,
+        rol: user.rol,
+        estado: user.estado,
+        telefono: user.telefono,
+        department: user.department,
+        avatar: user.avatar
+      };
 
       return res.json({ user: userProfile });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+    }
+  };
+
+  listUsers = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const users = await this.listUsersUseCase.execute(req.user);
+      const sanitized = users.map(u => ({
+        id_usuario: u.id_usuario,
+        id: String(u.id_usuario),
+        nombre: u.nombre,
+        apellido: u.apellido,
+        name: `${u.nombre} ${u.apellido}`.trim(),
+        correo: u.correo,
+        email: u.correo,
+        rol: u.rol,
+        role: u.rol,
+        estado: u.estado,
+        telefono: u.telefono,
+        department: u.department,
+        avatar: u.avatar
+      }));
+
+      return res.json(sanitized);
+    } catch (error: any) {
+      const status = error.status || 500;
+      return res.status(status).json({ error: error.message || 'Error al listar usuarios' });
+    }
+  };
+
+  createUser = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const created = await this.createUserUseCase.execute(req.body, req.user);
+      return res.status(201).json({
+        message: 'Usuario creado exitosamente.',
+        user: {
+          id_usuario: created.id_usuario,
+          nombre: created.nombre,
+          apellido: created.apellido,
+          correo: created.correo,
+          rol: created.rol,
+          estado: created.estado,
+          telefono: created.telefono
+        }
+      });
+    } catch (error: any) {
+      const status = error.status || 400;
+      return res.status(status).json({ error: error.message || 'Error al crear usuario' });
+    }
+  };
+
+  updateUser = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const { id } = req.params;
+      const updated = await this.updateUserUseCase.execute(Number(id), req.body, req.user);
+      return res.json({
+        message: 'Usuario actualizado exitosamente.',
+        user: {
+          id_usuario: updated.id_usuario,
+          nombre: updated.nombre,
+          apellido: updated.apellido,
+          correo: updated.correo,
+          rol: updated.rol,
+          estado: updated.estado,
+          telefono: updated.telefono
+        }
+      });
+    } catch (error: any) {
+      const status = error.status || 400;
+      return res.status(status).json({ error: error.message || 'Error al actualizar usuario' });
+    }
+  };
+
+  toggleStatus = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const { id } = req.params;
+      const { estado } = req.body;
+      const success = await this.toggleUserStatusUseCase.execute(Number(id), Boolean(estado), req.user);
+      return res.json({
+        message: `Estado del usuario ${estado ? 'activado' : 'desactivado'} con éxito.`,
+        success
+      });
+    } catch (error: any) {
+      const status = error.status || 400;
+      return res.status(status).json({ error: error.message || 'Error al cambiar estado del usuario' });
+    }
+  };
+
+  deleteUser = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+      if (req.user.rol.toLowerCase() !== 'admin') {
+        return res.status(403).json({ error: 'Solo los administradores pueden eliminar usuarios.' });
+      }
+
+      const { id } = req.params;
+      const targetId = Number(id);
+
+      if (targetId === req.user.id_usuario) {
+        return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta de administrador en sesión.' });
+      }
+
+      const deleted = await this.userPort.delete(targetId);
+      if (!deleted) {
+        return res.status(400).json({ error: 'No es posible eliminar este usuario (cuenta administrativa protegida o no encontrada).' });
+      }
+
+      return res.json({ message: 'Usuario eliminado satisfactoriamente.' });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || 'Error al eliminar usuario' });
     }
   };
 }

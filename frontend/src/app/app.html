@@ -1,16 +1,24 @@
-<app-navbar (openLogin)="openLoginModal()"></app-navbar>
+<app-navbar 
+  [currentView]="activeView"
+  (viewChange)="onViewChange($event)"
+  (openLogin)="openLoginModal()">
+</app-navbar>
 
 <main class="main-content">
-  <app-calendar (selectEvent)="onSelectEvent($event)"></app-calendar>
+  @if (activeView === 'calendar') {
+    <app-calendar (selectEvent)="onSelectEvent($event)"></app-calendar>
+  } @else if (activeView === 'management') {
+    <app-unified-management></app-unified-management>
+  }
 </main>
 
 <footer class="app-footer">
   <div class="footer-container">
     <div class="footer-brand">
-      <strong>CalendarUnite</strong> • Plataforma de Actividades de Bienestar Universitario
+      <strong>CalendarUnite</strong> • Plataforma Institucional de Bienestar Universitario
     </div>
     <div class="footer-links">
-      <span>APPS MOVILES HIBRIDAS</span>
+      <span>APPS MÓVILES HÍBRIDAS • CALENDARIO Y BIENESTAR</span>
     </div>
   </div>
 </footer>

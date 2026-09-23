@@ -23,7 +23,8 @@ export class EventApplication {
       throw new Error('El evento especificado no existe.');
     }
 
-    if (event.availableSpots <= 0) {
+    const availableSpots = event.availableSpots ?? event.totalSpots ?? 0;
+    if (availableSpots <= 0) {
       throw new Error('No quedan cupos disponibles para este evento.');
     }
 
@@ -32,7 +33,7 @@ export class EventApplication {
       throw new Error('Este correo electrónico ya se encuentra registrado en este evento.');
     }
 
-    const updatedSpots = event.availableSpots - 1;
+    const updatedSpots = availableSpots - 1;
     await this.eventPort.updateAvailableSpots(eventId, updatedSpots);
 
     const newAttendee: Attendee = {

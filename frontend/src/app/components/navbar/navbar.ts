@@ -1,6 +1,7 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { UserRole } from '../../models/user.model';
 
 @Component({
   selector: 'app-navbar',
@@ -12,7 +13,7 @@ import { AuthService } from '../../services/auth.service';
       <div class="navbar-container">
         
         <!-- Sección izquierda: Logotipo y títulos de la aplicación -->
-        <div class="navbar-brand">
+        <div class="navbar-brand" (click)="setView('calendar')" style="cursor: pointer;">
           <!-- Icono visual del calendario en formato SVG -->
           <div class="logo-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -31,6 +32,29 @@ import { AuthService } from '../../services/auth.service';
             <span class="brand-sub">Bienestar Universitario</span>
           </div>
         </div>
+
+        <!-- Sección central: Navegación de Vistas -->
+        <nav class="nav-links">
+          <button
+            class="nav-tab-btn"
+            [class.active]="currentView === 'calendar'"
+            (click)="setView('calendar')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <span>Cronograma Público</span>
+          </button>
+
+          @if (authService.isLoggedIn()) {
+            <button
+              class="nav-tab-btn"
+              [class.active]="currentView === 'management'"
+              (click)="setView('management')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Gestión Unificada</span>
+            </button>
+          }
+        </nav>
 
         <!-- Sección derecha: Usuario autenticado / Botón de Iniciar Sesión -->
         <div class="navbar-actions">
@@ -55,16 +79,21 @@ import { AuthService } from '../../services/auth.service';
           <!-- SI EL USUARIO YA ESTÁ AUTENTICADO -->
           <ng-container *ngIf="authService.currentUser() as user">
             <div class="user-profile-badge">
-              <img [src]="user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80'" [alt]="user.name" class="user-avatar" />
+              <div class="user-avatar-icon" [title]="user.name">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
               <div class="user-info">
                 <span class="user-name">{{ user.name }}</span>
-                <span class="role-tag" [ngClass]="user.role.toLowerCase()">
-                  {{ getRoleLabel(user.role) }}
+                <span class="role-tag" [ngClass]="(user.role || user.rol || '').toLowerCase()">
+                  {{ getRoleLabel(user.role || user.rol) }}
                 </span>
               </div>
             </div>
 
-            <button class="logout-btn" (click)="authService.logout()" title="Cerrar sesión">
+            <button class="logout-btn" (click)="onLogout()" title="Cerrar sesión">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
@@ -82,38 +111,38 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     .navbar-header {
       background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 12px 24px;
+      border-bottom: 2px solid var(--primary-blue);
+      padding: 10px 24px;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
     }
 
     .navbar-container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
 
     .navbar-brand {
       display: flex;
       align-items: center;
       gap: 12px;
+      text-decoration: none;
     }
 
     .logo-icon {
-      width: 40px;
-      height: 40px;
-      background: #2563eb;
-      color: #ffffff;
-      border-radius: 10px;
+      background: var(--primary-blue);
+      color: white;
+      padding: 8px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
     }
 
     .brand-text {
@@ -122,35 +151,68 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .brand-name {
+      font-size: 1.25rem;
       font-weight: 800;
-      font-size: 18px;
-      color: #0f172a;
-      line-height: 1.1;
-      letter-spacing: -0.3px;
+      color: var(--primary-blue);
+      letter-spacing: -0.02em;
     }
 
     .brand-sub {
-      font-size: 11px;
-      color: #64748b;
-      font-weight: 500;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-red);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-tab-btn {
+      background: transparent;
+      border: 1.5px solid transparent;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .nav-tab-btn:hover {
+      background: var(--primary-blue-light);
+      color: var(--primary-blue);
+    }
+
+    .nav-tab-btn.active {
+      background: var(--primary-blue);
+      color: #ffffff;
+      border-color: var(--primary-blue);
     }
 
     .navbar-actions {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .public-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: #f1f5f9;
-      color: #475569;
-      font-size: 12px;
       padding: 6px 12px;
       border-radius: 20px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
     }
 
     .pulse-dot {
@@ -158,44 +220,50 @@ import { AuthService } from '../../services/auth.service';
       height: 8px;
       background: #10b981;
       border-radius: 50%;
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-      animation: pulse 2s infinite;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
 
     .login-trigger-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #2563eb;
-      color: #ffffff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 13px;
+      background: var(--primary-blue);
+      color: white;
+      border: 2px solid var(--primary-blue);
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
     }
+
     .login-trigger-btn:hover {
-      background: #1d4ed8;
-      transform: translateY(-1px);
+      background: transparent;
+      color: var(--primary-blue);
     }
 
     .user-profile-badge {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 4px 12px 4px 6px;
+      padding: 4px 12px 4px 4px;
       border-radius: 30px;
+      border: 1px solid var(--border-color);
     }
 
-    .user-avatar {
-      width: 34px;
-      height: 34px;
+    .user-avatar-icon {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      object-fit: cover;
+      background: #e6eef5;
+      color: var(--primary-blue, #003366);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cbd5e1;
+      flex-shrink: 0;
     }
 
     .user-info {
@@ -204,85 +272,78 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .user-name {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
-      color: #1e293b;
+      color: var(--text-dark);
       line-height: 1.2;
     }
 
     .role-tag {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-      display: inline-block;
-      width: fit-content;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.04em;
     }
 
-    .role-tag.admin {
-      background: #fae8ff;
-      color: #86198f;
-    }
-
-    .role-tag.bienestar {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .role-tag.lider {
-      background: #fef3c7;
-      color: #92400e;
-    }
+    .role-tag.admin { color: var(--accent-red); }
+    .role-tag.bienestar { color: var(--primary-blue); }
+    .role-tag.lider { color: #b45309; }
 
     .logout-btn {
+      background: transparent;
+      border: 1.5px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #f1f5f9;
-      color: #64748b;
-      border: 1px solid #cbd5e1;
-      padding: 7px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
 
     .logout-btn:hover {
       background: #fee2e2;
-      color: #dc2626;
-      border-color: #fecaca;
+      border-color: #f87171;
+      color: #991b1b;
     }
 
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       .hide-mobile { display: none; }
+      .nav-tab-btn span { display: none; }
+      .nav-tab-btn { padding: 8px 10px; }
     }
   `]
 })
 export class NavbarComponent {
+  @Input() currentView: 'calendar' | 'management' = 'calendar';
   @Output() openLogin = new EventEmitter<void>();
+  @Output() viewChange = new EventEmitter<'calendar' | 'management'>();
 
   constructor(public authService: AuthService) {}
 
   onOpenLogin(): void {
-    this.authService.openLoginModal();
     this.openLogin.emit();
   }
 
-  getRoleLabel(role: string): string {
-    switch (role) {
-      case 'Admin': return '⚡ Admin';
-      case 'Bienestar': return '🏥 Bienestar';
-      case 'Lider': return '🎓 Líder';
+  setView(view: 'calendar' | 'management'): void {
+    this.currentView = view;
+    this.viewChange.emit(view);
+  }
+
+  onLogout(): void {
+    this.authService.logout();
+    this.setView('calendar');
+  }
+
+  getRoleLabel(role?: string | null): string {
+    if (!role) return '';
+    switch (role.toLowerCase()) {
+      case 'admin': return 'Administrador';
+      case 'bienestar': return 'Bienestar';
+      case 'lider': return 'Líder';
       default: return role;
     }
   }

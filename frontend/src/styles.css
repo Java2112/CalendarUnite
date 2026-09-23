@@ -1,28 +1,31 @@
 :root {
-  --primary-blue: #0F228C;
-  --primary-blue-dark: #0a1766;
-  --primary-blue-light: #eef2ff;
+  /* Paleta Oficial CalendarUnite */
+  --primary-blue: #003366;
+  --primary-blue-dark: #0A2342;
+  --primary-blue-light: #e6eef5;
 
-  --accent-red: #D9043D;
-  --accent-red-hover: #b80333;
-  --accent-red-light: #fde8ed;
+  --accent-red: #E31837;
+  --accent-red-hover: #C8102E;
+  --accent-red-light: #fce8ea;
 
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --text-dark: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --bg-main: #F4F4F4;
+  --bg-canvas: #E5E5E5;
+  --bg-card: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --text-dark: #333333;
+  --text-muted: #555555;
+  --border-color: #d1d5db;
   
-  --badge-presencial-bg: #e0e7ff;
-  --badge-presencial-text: #0F228C;
+  --badge-presencial-bg: #e6eef5;
+  --badge-presencial-text: #003366;
   --badge-virtual-bg: #d1fae5;
   --badge-virtual-text: #065f46;
   --badge-nocturna-bg: #fef3c7;
   --badge-nocturna-text: #92400e;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -37,8 +40,33 @@ body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   color: var(--text-dark);
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-dark);
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1.25;
+}
+
+h2 {
+  font-weight: 800;
+  font-size: 1.65rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.35;
 }
 
 .navbar-header {
@@ -66,14 +94,14 @@ body {
 }
 
 .logo-icon {
-  background: linear-gradient(135deg, var(--primary-blue), var(--accent-red));
+  background: var(--primary-blue);
   color: white;
   padding: 0.5rem;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(15, 34, 140, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 51, 102, 0.25);
 }
 
 .brand-text {
@@ -137,7 +165,7 @@ body {
 }
 
 .hero-banner {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #172da8 60%, var(--accent-red) 100%);
+  background: var(--primary-blue);
   color: white;
   padding: 2.5rem;
   border-radius: 20px;
@@ -899,33 +927,439 @@ body {
   gap: 14px;
 }
 
-.backend-error-banner .error-icon {
-  font-size: 24px;
+.backend-error-banner .retry-btn:hover {
+  background: #b91c1c;
 }
 
-.backend-error-banner strong {
-  color: #dc2626;
+/* ==========================================================================
+   SISTEMA DE DISEÑO ESTANDARIZADO: BOTONES, TARJETAS Y FOOTER
+   ========================================================================== */
+
+/* Botones con inversión de color al hover */
+.btn-cu-primary {
+  background-color: var(--primary-blue);
+  color: #ffffff;
+  border: 2px solid var(--primary-blue);
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-cu-primary:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--primary-blue);
+}
+
+.btn-cu-secondary {
+  background-color: var(--accent-red);
+  color: #ffffff;
+  border: 2px solid var(--accent-red);
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-cu-secondary:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--accent-red);
+}
+
+.btn-cu-outline {
+  background-color: transparent;
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+  border-radius: 6px;
+  padding: 10px 20px;
   font-size: 14px;
-  display: block;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.backend-error-banner p {
-  color: #991b1b;
-  font-size: 13px;
-  margin: 2px 0 0 0;
+.btn-cu-outline:hover:not(:disabled) {
+  background-color: var(--primary-blue);
+  color: #ffffff;
 }
 
-.backend-error-banner .retry-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
+.btn-cu-danger-outline {
+  background-color: transparent;
+  color: var(--accent-red);
+  border: 1.5px solid var(--accent-red);
+  border-radius: 6px;
   padding: 8px 16px;
-  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cu-danger-outline:hover:not(:disabled) {
+  background-color: var(--accent-red);
+  color: #ffffff;
+}
+
+.btn-cu-icon {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-cu-icon:hover:not(:disabled) {
+  background: var(--primary-blue-light);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+/* Tarjetas institucionales */
+.cu-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Footer institucional */
+.app-footer {
+  background-color: #003366;
+  color: #ffffff;
+  padding: 28px 20px;
+  margin-top: 50px;
+  border-top: 3px solid #E31837;
+}
+
+.app-footer .footer-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.app-footer .footer-brand {
+  font-size: 15px;
+  color: #e6eef5;
+}
+
+.app-footer .footer-brand strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.app-footer .footer-links {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fce8ea;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   ESTILOS PARA EL MÓDULO DE GESTIÓN UNIFICADA
+   ========================================================================== */
+
+.management-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 20px 48px 20px;
+}
+
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.management-header .title-area h1 {
+  font-size: 2rem;
+  color: var(--primary-blue-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.management-header .title-area p {
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.management-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   white-space: nowrap;
-  transition: background 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--primary-blue);
+}
+
+.tab-btn.active {
+  color: var(--primary-blue);
+  border-bottom-color: var(--accent-red);
+  font-weight: 700;
+}
+
+.tab-btn .badge-pill {
+  background: var(--primary-blue-light);
+  color: var(--primary-blue);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Tablas Responsivas para Gestión */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.cu-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.cu-table th {
+  background: #f8fafc;
+  color: var(--primary-blue);
+  font-weight: 700;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.cu-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-dark);
+  vertical-align: middle;
+}
+
+.cu-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.user-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e6eef5;
+  color: var(--primary-blue, #003366);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  flex-shrink: 0;
+}
+
+/* Badges de Ownership y Estado */
+.ownership-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ownership-mine {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.ownership-other {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-inactive {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.role-badge.admin {
+  background: #fce8ea;
+  color: var(--accent-red);
+}
+
+.role-badge.bienestar {
+  background: #e6eef5;
+  color: var(--primary-blue);
+}
+
+.role-badge.lider {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Acciones en tabla */
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Modal Genérico Reutilizable */
+.cu-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(10, 35, 66, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.cu-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.cu-modal-header {
+  padding: 20px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cu-modal-header h2 {
+  font-size: 1.3rem;
+  color: var(--primary-blue-dark);
+  margin: 0;
+}
+
+.cu-modal-body {
+  padding: 24px;
+}
+
+.cu-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .backend-error-banner .retry-btn:hover {
