@@ -16,8 +16,8 @@ export interface CalendarDay {
 
 @Component({
   selector: 'app-calendar',
-  standalone: true, // Componente independiente (Angular 14+)
-  imports: [CommonModule, FormsModule], // Importamos las directivas básicas y soporte para formularios (ngModel)
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="dashboard-container">
       <!-- Sección principal del Banner con el título y estadísticas -->
@@ -50,6 +50,20 @@ export interface CalendarDay {
           </div>
         </div>
       </section>
+
+      <!-- Alerta de Conexión si el Backend no está disponible -->
+      @if (eventService.backendError()) {
+        <div class="backend-error-banner">
+          <div class="error-content">
+            <span class="error-icon">⚠️</span>
+            <div>
+              <strong>Error de conexión con el Servidor Backend:</strong>
+              <p>{{ eventService.backendError() }}</p>
+            </div>
+          </div>
+          <button (click)="fetchData()" class="retry-btn">Reintentar Conexión</button>
+        </div>
+      }
 
       <!-- Barra de Filtros: Buscador por texto, botones de modalidad y cambio de vista -->
       <div class="controls-bar">
@@ -184,7 +198,7 @@ export interface CalendarDay {
           }
 
           <!-- Estado vacío cuando la búsqueda o fecha no arroja resultados -->
-          @if (!eventService.isLoading() && filteredEvents.length === 0) {
+          @if (!eventService.isLoading() && filteredEvents.length === 0 && !eventService.backendError()) {
             <div class="empty-state">
               <h3>No hay actividades programadas para esta fecha</h3>
               <p>Selecciona otro día en el calendario o filtra por modalidad.</p>
@@ -245,24 +259,19 @@ export interface CalendarDay {
   `
 })
 export class CalendarComponent implements OnInit {
-  // Evento de salida para avisar al componente padre cuando el usuario selecciona un evento
   @Output() selectEvent = new EventEmitter<EventItem>();
 
-  // Opciones de filtros y estados locales de la interfaz
   modalities: ModalityType[] = ['Todas', 'Presencial', 'Virtual', 'Nocturna'];
   selectedModality: ModalityType = 'Todas';
   searchQuery: string = '';
-  viewMode: 'grid' | 'list' = 'grid'; // Modo de visualización alternable
+  viewMode: 'grid' | 'list' = 'grid';
 
-  // Control de fechas para la navegación del calendario (Inicia en Septiembre de 2026)
   currentDate: Date = new Date(2026, 8, 1);
   selectedDate: string | null = null;
   calendarDays: CalendarDay[] = [];
 
-  // Inyectamos el servicio global de eventos en el constructor
   constructor(public eventService: EventService) {}
 
-  // Getters para leer fácilmente los totales directamente desde el servicio
   get totalEventsCount(): number {
     return this.eventService.stats()?.totalEvents || 0;
   }
@@ -279,31 +288,26 @@ export class CalendarComponent implements OnInit {
     return this.eventService.stats()?.nocturnas || 0;
   }
 
-  // Al iniciar el componente, cargamos los datos del servidor y generamos la grilla del mes
   ngOnInit(): void {
     this.fetchData();
     this.buildCalendarGrid();
   }
 
-  // Retorna el nombre del mes actual en español
   get currentMonthName(): string {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return months[this.currentDate.getMonth()];
   }
 
-  // Retorna el año actual cargado
   get currentYear(): number {
     return this.currentDate.getFullYear();
   }
 
-  // Formatea la fecha seleccionada a DD/MM/AAAA para mostrar en el título
   get selectedDateDisplay(): string {
     if (!this.selectedDate) return '';
     const parts = this.selectedDate.split('-');
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
-  // Filtra los eventos traídos del servicio si hay un día particular seleccionado
   get filteredEvents(): EventItem[] {
     let list = this.eventService.events();
     if (this.selectedDate) {
@@ -312,25 +316,22 @@ export class CalendarComponent implements OnInit {
     return list;
   }
 
-  // Llama al servicio para obtener los eventos aplicando los filtros actuales de modalidad y texto
   fetchData(): void {
     this.eventService.loadEvents(this.selectedModality, this.searchQuery).subscribe({
-      next: () => this.buildCalendarGrid() // Al terminar de cargar, reconstruimos el calendario
+      next: () => this.buildCalendarGrid(),
+      error: () => this.buildCalendarGrid()
     });
   }
 
-  // Cambia la modalidad activa y vuelve a cargar los datos
   setModality(mod: ModalityType): void {
     this.selectedModality = mod;
     this.fetchData();
   }
 
-  // Evento al escribir en la barra de búsqueda
   onFilterChange(): void {
     this.fetchData();
   }
 
-  // Restablece todos los filtros de búsqueda a su estado inicial
   resetFilters(): void {
     this.selectedModality = 'Todas';
     this.searchQuery = '';
@@ -338,39 +339,33 @@ export class CalendarComponent implements OnInit {
     this.fetchData();
   }
 
-  // Elimina la selección del día actual para volver a mostrar el mes completo
   clearDateFilter(): void {
     this.selectedDate = null;
   }
 
-  // Retrocede un mes en el calendario
   prevMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
     this.buildCalendarGrid();
   }
 
-  // Avanza un mes en el calendario
   nextMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
     this.buildCalendarGrid();
   }
 
-  // Selecciona o deselecciona un día específico al hacer clic en una celda
   selectCalendarDay(cell: CalendarDay): void {
     if (!cell.isCurrentMonth) return;
     if (this.selectedDate === cell.dateStr) {
-      this.selectedDate = null; // Si ya estaba seleccionado, lo deselecciona
+      this.selectedDate = null;
     } else {
       this.selectedDate = cell.dateStr;
     }
   }
 
-  // Algoritmo para construir las celdas del mes actual con sus respectivos desfases de días
   buildCalendarGrid(): void {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
 
-    // Calculamos en qué día de la semana cae el primer día del mes (Ajustado para comenzar en Lunes)
     const firstDayIndex = new Date(year, month, 1).getDay();
     const paddingDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
@@ -379,7 +374,6 @@ export class CalendarComponent implements OnInit {
 
     const cells: CalendarDay[] = [];
 
-    // Agregamos celdas vacías de relleno (días pertenecientes al mes anterior)
     for (let i = 0; i < paddingDays; i++) {
       cells.push({
         dayNumber: 0,
@@ -391,13 +385,11 @@ export class CalendarComponent implements OnInit {
       });
     }
 
-    // Generamos cada uno de los días pertenecientes al mes actual
     for (let day = 1; day <= daysInMonth; day++) {
       const dayStr = day < 10 ? `0${day}` : `${day}`;
       const monthStr = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
       const fullDateStr = `${year}-${monthStr}-${dayStr}`;
 
-      // Buscamos si hay eventos para este día concreto
       const dayEvents = allEvents.filter(e => e.date === fullDateStr);
       const categories = Array.from(new Set(dayEvents.map(e => e.category)));
 
@@ -414,7 +406,6 @@ export class CalendarComponent implements OnInit {
     this.calendarDays = cells;
   }
 
-  // Devuelve la clase CSS adecuada para asignar un color al punto del calendario según la categoría
   getDotClass(category: string): string {
     if (category.includes('Psicología') || category.includes('Salud')) return 'dot-salud';
     if (category.includes('Deportes')) return 'dot-deporte';
@@ -422,7 +413,6 @@ export class CalendarComponent implements OnInit {
     return 'dot-desarrollo';
   }
 
-  // Emite el evento seleccionado hacia el componente padre
   onSelect(evt: EventItem): void {
     this.selectEvent.emit(evt);
   }

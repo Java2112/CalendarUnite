@@ -1,4 +1,4 @@
-<app-navbar></app-navbar>
+<app-navbar (openLogin)="openLoginModal()"></app-navbar>
 
 <main class="main-content">
   <app-calendar (selectEvent)="onSelectEvent($event)"></app-calendar>
@@ -20,4 +20,8 @@
     [event]="selectedEvent" 
     (close)="closeEventModal()">
   </app-event-detail>
+}
+
+@if (authService.isAuthModalOpen()) {
+  <app-login (close)="closeLoginModal()"></app-login>
 }

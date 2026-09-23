@@ -1,6 +1,6 @@
 // Importamos Express para crear el servidor web
 const express = require('express');
-// Importamos CORS para permitir peticiones desde otros dominios (ej. el frontend)
+// Importamos CORS para permitir peticiones desde el frontend Angular
 const cors = require('cors');
 
 // Inicializamos la aplicación de Express
@@ -10,10 +10,41 @@ const PORT = process.env.PORT || 3000;
 
 // Habilitamos CORS en toda la aplicación
 app.use(cors());
-// Middleware para que Express pueda leer y entender datos en formato JSON
+// Middleware para procesar JSON en el cuerpo de las peticiones
 app.use(express.json());
 
-// Arreglo en memoria con los datos iniciales de los eventos
+// --- BASE DE DATOS EN MEMORIA DE USUARIOS (Roles: Admin, Bienestar, Lider) ---
+const users = [
+  {
+    id: 'usr-admin',
+    name: 'Carlos Mendoza',
+    email: 'admin@unite.edu.co',
+    password: 'admin123',
+    role: 'Admin',
+    department: 'Administración General',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+  },
+  {
+    id: 'usr-bienestar',
+    name: 'Dra. María Elena Restrepo',
+    email: 'bienestar@unite.edu.co',
+    password: 'bienestar123',
+    role: 'Bienestar',
+    department: 'Coordinación de Bienestar Universitario',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'
+  },
+  {
+    id: 'usr-lider',
+    name: 'Juan Pablo Ríos',
+    email: 'lider@unite.edu.co',
+    password: 'lider123',
+    role: 'Lider',
+    department: 'Líder Estudiantil Interfacultades',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80'
+  }
+];
+
+// --- BASE DE DATOS EN MEMORIA DE EVENTOS ---
 let events = [
   {
     id: 'evt-100',
@@ -122,22 +153,100 @@ let events = [
   }
 ];
 
-// Arreglo en memoria para almacenar las personas inscritas a los eventos
+// Asistentes registrados
 let attendees = [];
 
-// Ruta GET para obtener la lista de eventos (soporta filtros opcionales por modalidad y búsqueda)
+// ==========================================
+// RUTAS DE AUTENTICACIÓN (LOGIN DE ROLES)
+// ==========================================
+
+// POST /api/auth/login -> Autentica usuarios por correo/contraseña o por selección rápida de rol
+app.post('/api/auth/login', (req, res) => {
+  const { email, password, role } = req.body;
+
+  let foundUser = null;
+
+  // Si se envió un rol específico directamente (login rápido de prueba)
+  if (role) {
+    foundUser = users.find(u => u.role.toLowerCase() === role.toLowerCase());
+  } 
+  // Si se envió correo y contraseña
+  else if (email && password) {
+    foundUser = users.find(u => 
+      u.email.toLowerCase() === email.trim().toLowerCase() && 
+      u.password === password
+    );
+  }
+
+  if (!foundUser) {
+    return res.status(401).json({ 
+      error: 'Credenciales inválidas. Por favor verifica el correo y contraseña.' 
+    });
+  }
+
+  // Generamos un token simulado de sesión
+  const token = `token-${foundUser.role.toLowerCase()}-${Date.now()}`;
+
+  // Retornamos el perfil de usuario sin exporner la contraseña
+  const userProfile = {
+    id: foundUser.id,
+    name: foundUser.name,
+    email: foundUser.email,
+    role: foundUser.role,
+    department: foundUser.department,
+    avatar: foundUser.avatar
+  };
+
+  res.json({
+    message: `Inicio de sesión exitoso como ${foundUser.role}`,
+    token,
+    user: userProfile
+  });
+});
+
+// GET /api/auth/me -> Obtiene los datos del usuario logueado según el token enviado en headers
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No se proporcionó token de autorización' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  let matchedUser = null;
+
+  if (token.includes('admin')) matchedUser = users.find(u => u.role === 'Admin');
+  else if (token.includes('bienestar')) matchedUser = users.find(u => u.role === 'Bienestar');
+  else if (token.includes('lider')) matchedUser = users.find(u => u.role === 'Lider');
+
+  if (!matchedUser) {
+    return res.status(401).json({ error: 'Sesión o token inválido' });
+  }
+
+  res.json({
+    user: {
+      id: matchedUser.id,
+      name: matchedUser.name,
+      email: matchedUser.email,
+      role: matchedUser.role,
+      department: matchedUser.department,
+      avatar: matchedUser.avatar
+    }
+  });
+});
+
+// ==========================================
+// RUTAS DE EVENTOS Y REGISTRO
+// ==========================================
+
+// GET /api/events -> Consulta la lista de eventos con filtros opcionales
 app.get('/api/events', (req, res) => {
-  // Extraemos parámetros de búsqueda desde la URL (?modality=...&search=...)
   const { modality, search } = req.query;
-  // Copiamos la lista original de eventos para filtrar sobre ella
   let filtered = [...events];
 
-  // Si se envió modalidad y no es "Todas", filtramos ignorando mayúsculas/minúsculas
   if (modality && modality !== 'Todas') {
     filtered = filtered.filter(e => e.modality.toLowerCase() === modality.toString().toLowerCase());
   }
 
-  // Si hay un texto de búsqueda, filtramos por coincidencia en título, descripción o categoría
   if (search) {
     const q = search.toString().toLowerCase();
     filtered = filtered.filter(e => 
@@ -147,57 +256,45 @@ app.get('/api/events', (req, res) => {
     );
   }
 
-  // Respondemos enviando la lista (filtrada o completa) en formato JSON
   res.json(filtered);
 });
 
-// Ruta GET para obtener el detalle de un solo evento por su ID
+// GET /api/events/:id -> Detalle de un evento
 app.get('/api/events/:id', (req, res) => {
-  // Buscamos el evento que coincida con el ID recibido en la URL
   const event = events.find(e => e.id === req.params.id);
-  
-  // Si no se encuentra, retornamos un error 404
   if (!event) {
     return res.status(404).json({ error: 'Evento no encontrado' });
   }
-  
-  // Retornamos la información del evento hallado
   res.json(event);
 });
 
-// Ruta POST para registrar a un asistente en un evento específico
+// POST /api/events/:id/register -> Inscripción a evento
 app.post('/api/events/:id/register', (req, res) => {
-  const { id } = req.params; // ID del evento
-  const { nombre, correo, telefono } = req.body; // Datos enviados desde el formulario
+  const { id } = req.params;
+  const { nombre, correo, telefono } = req.body;
 
-  // Validación: confirmamos que no falte ningún campo obligatorio
   if (!nombre || !correo || !telefono) {
-    return res.status(400).json({ error: 'Todos los campos (nombre, correo y teléfono) son obligatorios.' });
+    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
   }
 
-  // Verificamos que el evento exista en nuestra lista
   const targetEvent = events.find(e => e.id === id);
   if (!targetEvent) {
     return res.status(404).json({ error: 'El evento especificado no existe.' });
   }
 
-  // Verificamos que queden cupos disponibles
   if (targetEvent.availableSpots <= 0) {
     return res.status(400).json({ error: 'No quedan cupos disponibles para este evento.' });
   }
 
-  // Evitamos que una persona se inscriba dos veces al mismo evento con el mismo correo
   const existing = attendees.find(a => a.eventId === id && a.correo.toLowerCase() === correo.trim().toLowerCase());
   if (existing) {
     return res.status(400).json({ error: 'Este correo electrónico ya se encuentra registrado en este evento.' });
   }
 
-  // Descontamos un cupo disponible en el evento
   targetEvent.availableSpots -= 1;
 
-  // Creamos el objeto del nuevo asistente
   const newAttendee = {
-    id: `att-${Date.now()}`, // Generamos un ID único basado en el tiempo actual
+    id: `att-${Date.now()}`,
     eventId: id,
     nombre: nombre.trim(),
     correo: correo.trim(),
@@ -205,10 +302,8 @@ app.post('/api/events/:id/register', (req, res) => {
     registeredAt: new Date().toISOString()
   };
 
-  // Guardamos el nuevo registro en el arreglo global
   attendees.push(newAttendee);
 
-  // Respondemos con estatus 201 (Creado) y la confirmación
   res.status(201).json({
     message: 'Inscripción realizada con éxito. Se ha registrado tu cupo.',
     attendee: newAttendee,
@@ -216,9 +311,8 @@ app.post('/api/events/:id/register', (req, res) => {
   });
 });
 
-// Ruta GET para consultar estadísticas globales sobre los eventos
+// GET /api/stats -> Estadísticas globales
 app.get('/api/stats', (req, res) => {
-  // Retornamos el total de eventos y la cantidad filtrada por cada modalidad
   res.json({
     totalEvents: events.length,
     presenciales: events.filter(e => e.modality === 'Presencial').length,

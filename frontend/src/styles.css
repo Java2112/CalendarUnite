@@ -879,3 +879,56 @@ body {
   .navbar-container { flex-direction: column; gap: 0.85rem; align-items: flex-start; }
   .navbar-actions { width: 100%; justify-content: space-between; }
 }
+
+.backend-error-banner {
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+}
+
+.backend-error-banner .error-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.backend-error-banner .error-icon {
+  font-size: 24px;
+}
+
+.backend-error-banner strong {
+  color: #dc2626;
+  font-size: 14px;
+  display: block;
+}
+
+.backend-error-banner p {
+  color: #991b1b;
+  font-size: 13px;
+  margin: 2px 0 0 0;
+}
+
+.backend-error-banner .retry-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.backend-error-banner .retry-btn:hover {
+  background: #b91c1c;
+}
+
