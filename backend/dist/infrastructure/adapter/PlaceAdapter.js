@@ -1,59 +1,59 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlaceAdapter = void 0;
+const database_1 = require("../config/database");
 class PlaceAdapter {
-    places = [
-        {
-            id_lugar: 1,
-            nombre: 'Auditorio Principal',
-            direccion: 'Campus Principal Cra 15 # 45-20',
-            edificio: 'Edificio A - Fundadores',
-            aula: 'Auditorio 1'
-        },
-        {
-            id_lugar: 2,
-            nombre: 'Salón de Cultura y Expresión Artística',
-            direccion: 'Campus Principal Cra 15 # 45-20',
-            edificio: 'Casa U Bienestar',
-            aula: 'Salón 201'
-        },
-        {
-            id_lugar: 3,
-            nombre: 'Canchas Sintéticas Múltiples',
-            direccion: 'Campus Norte - Sector Deportivo',
-            edificio: 'Complejo Deportivo',
-            aula: 'Cancha Principal'
-        },
-        {
-            id_lugar: 4,
-            nombre: 'Taller de Artes B-204',
-            direccion: 'Campus Principal Cra 15 # 45-20',
-            edificio: 'Edificio B - Artes Integradas',
-            aula: 'Taller 204'
-        },
-        {
-            id_lugar: 5,
-            nombre: 'Espacio Virtual Institucional',
-            direccion: 'Plataforma Digital',
-            edificio: 'Campus Virtual',
-            aula: 'Sala Digital'
+    constructor() {
+        this.ensureInitialSites();
+    }
+    async ensureInitialSites() {
+        try {
+            const [rows] = await database_1.pool.query('SELECT COUNT(*) as count FROM site');
+            const count = rows[0]?.count || 0;
+            if (count === 0) {
+                const initialPlaces = [
+                    ['Auditorio Principal', 'Campus Principal Cra 15 # 45-20', 'Edificio A - Fundadores', 'Auditorio 1'],
+                    ['Salón de Cultura y Expresión Artística', 'Campus Principal Cra 15 # 45-20', 'Casa U Bienestar', 'Salón 201'],
+                    ['Canchas Sintéticas Múltiples', 'Campus Norte - Sector Deportivo', 'Complejo Deportivo', 'Cancha Principal'],
+                    ['Taller de Artes B-204', 'Campus Principal Cra 15 # 45-20', 'Edificio B - Artes Integradas', 'Taller 204'],
+                    ['Espacio Virtual Institucional', 'Plataforma Digital', 'Campus Virtual', 'Sala Digital']
+                ];
+                for (const p of initialPlaces) {
+                    await database_1.pool.query('INSERT INTO site (name, address, building, classroom) VALUES (?, ?, ?, ?)', p);
+                }
+                console.log('[PlaceAdapter] Lugares/Sitios iniciales sembrados en MySQL con éxito.');
+            }
         }
-    ];
+        catch (err) {
+            console.warn('[PlaceAdapter] Advertencia al verificar/sembrar sitios iniciales:', err.message);
+        }
+    }
+    mapRowToPlace(row) {
+        return {
+            id_lugar: row.id_site,
+            nombre: row.name,
+            direccion: row.address || '',
+            edificio: row.building || '',
+            aula: row.classroom || ''
+        };
+    }
     async findAll() {
-        return [...this.places];
+        const [rows] = await database_1.pool.query('SELECT * FROM site ORDER BY id_site ASC');
+        return rows.map((r) => this.mapRowToPlace(r));
     }
     async findById(id) {
-        const place = this.places.find(p => p.id_lugar === Number(id));
-        return place || null;
+        const [rows] = await database_1.pool.query('SELECT * FROM site WHERE id_site = ? LIMIT 1', [Number(id)]);
+        if (!rows || rows.length === 0)
+            return null;
+        return this.mapRowToPlace(rows[0]);
     }
     async create(placeData) {
-        const nextId = this.places.length > 0 ? Math.max(...this.places.map(p => p.id_lugar)) + 1 : 1;
-        const newPlace = {
-            id_lugar: nextId,
-            ...placeData
-        };
-        this.places.push(newPlace);
-        return newPlace;
+        const [result] = await database_1.pool.execute('INSERT INTO site (name, address, building, classroom) VALUES (?, ?, ?, ?)', [placeData.nombre, placeData.direccion || null, placeData.edificio || null, placeData.aula || null]);
+        const created = await this.findById(result.insertId);
+        if (!created) {
+            throw new Error('Error al recuperar el sitio creado en MySQL');
+        }
+        return created;
     }
 }
 exports.PlaceAdapter = PlaceAdapter;

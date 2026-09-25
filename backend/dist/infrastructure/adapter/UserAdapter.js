@@ -5,147 +5,140 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserAdapter = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const database_1 = require("../config/database");
 class UserAdapter {
-    users = [
-        {
-            id_usuario: 1,
-            id: '1',
-            nombre: 'Carlos',
-            apellido: 'Mendoza',
-            correo: 'admin@unite.edu.co',
-            password_hash: bcryptjs_1.default.hashSync('admin123', 10),
-            estado: true,
-            telefono: '3001234567',
-            rol: 'Admin',
-            name: 'Carlos Mendoza',
-            email: 'admin@unite.edu.co',
-            role: 'Admin',
-            department: 'Administración General'
-        },
-        {
-            id_usuario: 2,
-            id: '2',
-            nombre: 'María Elena',
-            apellido: 'Restrepo',
-            correo: 'bienestar@unite.edu.co',
-            password_hash: bcryptjs_1.default.hashSync('bienestar123', 10),
-            estado: true,
-            telefono: '3109876543',
-            rol: 'Bienestar',
-            name: 'Dra. María Elena Restrepo',
-            email: 'bienestar@unite.edu.co',
-            role: 'Bienestar',
-            department: 'Coordinación de Bienestar Universitario'
-        },
-        {
-            id_usuario: 3,
-            id: '3',
-            nombre: 'Juan Pablo',
-            apellido: 'Ríos',
-            correo: 'lider@unite.edu.co',
-            password_hash: bcryptjs_1.default.hashSync('lider123', 10),
-            estado: true,
-            telefono: '3205557890',
-            rol: 'Lider',
-            name: 'Juan Pablo Ríos',
-            email: 'lider@unite.edu.co',
-            role: 'Lider',
-            department: 'Líder Estudiantil Interfacultades'
-        },
-        {
-            id_usuario: 4,
-            id: '4',
-            nombre: 'Administrador',
-            apellido: 'Principal',
-            correo: 'superadmin@unite.edu.co',
-            password_hash: bcryptjs_1.default.hashSync('admin123', 10),
-            estado: true,
-            telefono: '3009998877',
-            rol: 'Admin',
-            name: 'Administrador Principal',
-            email: 'superadmin@unite.edu.co',
-            role: 'Admin',
-            department: 'Dirección de Tecnología y Sistemas'
+    constructor() {
+        this.ensureInitialAdmin();
+    }
+    /**
+     * Asegura que exista al menos un usuario administrador por defecto para iniciar sesión
+     */
+    async ensureInitialAdmin() {
+        try {
+            const [rows] = await database_1.pool.query('SELECT COUNT(*) as count FROM user');
+            const count = rows[0]?.count || 0;
+            if (count === 0) {
+                const hash = bcryptjs_1.default.hashSync('admin123', 10);
+                await database_1.pool.query(`INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`, ['Carlos', 'Mendoza', 'admin@unite.edu.co', hash, true, '3001234567', 'Admin']);
+                const bienestarHash = bcryptjs_1.default.hashSync('bienestar123', 10);
+                await database_1.pool.query(`INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`, ['María Elena', 'Restrepo', 'bienestar@unite.edu.co', bienestarHash, true, '3109876543', 'Bienestar']);
+                const liderHash = bcryptjs_1.default.hashSync('lider123', 10);
+                await database_1.pool.query(`INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`, ['Juan Pablo', 'Ríos', 'lider@unite.edu.co', liderHash, true, '3205557890', 'Lider']);
+                console.log('[UserAdapter] Usuarios iniciales sembrados en MySQL con éxito.');
+            }
         }
-    ];
+        catch (err) {
+            console.warn('[UserAdapter] Advertencia al verificar/sembrar usuarios iniciales:', err.message);
+        }
+    }
+    mapRowToUser(row) {
+        const fullName = `${row.name_user} ${row.subname}`.trim();
+        return {
+            id_usuario: row.id_user,
+            id: String(row.id_user),
+            nombre: row.name_user,
+            apellido: row.subname,
+            correo: row.email,
+            password_hash: row.password_hash,
+            estado: Boolean(row.status),
+            telefono: row.phone_number || '',
+            rol: row.role,
+            name: fullName,
+            email: row.email,
+            role: row.role,
+            department: row.role === 'Admin'
+                ? 'Administración General'
+                : row.role === 'Bienestar'
+                    ? 'Bienestar Universitario'
+                    : 'Líder Estudiantil Interfacultades'
+        };
+    }
     async findByEmail(email) {
-        const user = this.users.find(u => u.correo.toLowerCase() === email.toLowerCase());
-        return user ? { ...user } : null;
+        const [rows] = await database_1.pool.query('SELECT * FROM user WHERE LOWER(email) = LOWER(?) LIMIT 1', [email]);
+        if (!rows || rows.length === 0)
+            return null;
+        return this.mapRowToUser(rows[0]);
     }
     async findByRole(role) {
-        const user = this.users.find(u => u.rol.toLowerCase() === role.toLowerCase());
-        return user ? { ...user } : null;
+        const [rows] = await database_1.pool.query('SELECT * FROM user WHERE LOWER(role) = LOWER(?) LIMIT 1', [role]);
+        if (!rows || rows.length === 0)
+            return null;
+        return this.mapRowToUser(rows[0]);
     }
     async findById(id) {
-        const numId = Number(id);
-        const user = this.users.find(u => u.id_usuario === numId);
-        return user ? { ...user } : null;
+        const [rows] = await database_1.pool.query('SELECT * FROM user WHERE id_user = ? LIMIT 1', [Number(id)]);
+        if (!rows || rows.length === 0)
+            return null;
+        return this.mapRowToUser(rows[0]);
     }
     async findAll() {
-        return this.users.map(u => ({ ...u }));
+        const [rows] = await database_1.pool.query('SELECT * FROM user ORDER BY id_user ASC');
+        return rows.map((r) => this.mapRowToUser(r));
     }
     async create(userData) {
-        const nextId = this.users.length > 0 ? Math.max(...this.users.map(u => u.id_usuario)) + 1 : 1;
-        const fullName = `${userData.nombre} ${userData.apellido}`.trim();
-        const newUser = {
-            ...userData,
-            id_usuario: nextId,
-            id: String(nextId),
-            name: fullName,
-            email: userData.correo,
-            role: userData.rol,
-            department: userData.department || (userData.rol === 'Admin' ? 'Administración' : userData.rol === 'Bienestar' ? 'Bienestar Universitario' : 'Liderazgo Estudiantil')
-        };
-        this.users.push(newUser);
-        return { ...newUser };
+        const [result] = await database_1.pool.execute(`INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+            userData.nombre,
+            userData.apellido,
+            userData.correo,
+            userData.password_hash,
+            userData.estado !== undefined ? userData.estado : true,
+            userData.telefono || null,
+            userData.rol
+        ]);
+        const insertedId = result.insertId;
+        const createdUser = await this.findById(insertedId);
+        if (!createdUser) {
+            throw new Error('Error al recuperar el usuario creado en MySQL');
+        }
+        return createdUser;
     }
     async update(id, data) {
-        const userIndex = this.users.findIndex(u => u.id_usuario === Number(id));
-        if (userIndex === -1)
+        const currentUser = await this.findById(id);
+        if (!currentUser)
             return null;
-        const current = this.users[userIndex];
-        const updated = {
-            ...current,
-            ...data,
-            id_usuario: current.id_usuario,
-            id: String(current.id_usuario)
-        };
-        if (data.nombre || data.apellido) {
-            const name = `${updated.nombre} ${updated.apellido}`.trim();
-            updated.name = name;
-        }
-        if (data.correo) {
-            updated.email = data.correo;
-        }
-        if (data.rol) {
-            updated.role = data.rol;
-        }
-        this.users[userIndex] = updated;
-        return { ...updated };
+        const updatedNombre = data.nombre !== undefined ? data.nombre : currentUser.nombre;
+        const updatedApellido = data.apellido !== undefined ? data.apellido : currentUser.apellido;
+        const updatedCorreo = data.correo !== undefined ? data.correo : currentUser.correo;
+        const updatedPassword = data.password_hash !== undefined ? data.password_hash : currentUser.password_hash;
+        const updatedStatus = data.estado !== undefined ? data.estado : currentUser.estado;
+        const updatedTelefono = data.telefono !== undefined ? data.telefono : (currentUser.telefono || null);
+        const updatedRol = data.rol !== undefined ? data.rol : currentUser.rol;
+        await database_1.pool.query(`UPDATE user 
+       SET name_user = ?, subname = ?, email = ?, password_hash = ?, status = ?, phone_number = ?, role = ?
+       WHERE id_user = ?`, [
+            updatedNombre,
+            updatedApellido,
+            updatedCorreo,
+            updatedPassword,
+            updatedStatus,
+            updatedTelefono,
+            updatedRol,
+            Number(id)
+        ]);
+        return this.findById(id);
     }
     async updateStatus(id, estado) {
-        const user = this.users.find(u => u.id_usuario === Number(id));
-        if (!user)
-            return false;
-        user.estado = estado;
-        return true;
+        const [result] = await database_1.pool.execute('UPDATE user SET status = ? WHERE id_user = ?', [estado, Number(id)]);
+        return result.affectedRows > 0;
     }
     async delete(id) {
         const numId = Number(id);
-        // Proteger cuentas de administrador raíz
-        if (numId === 1 || numId === 4) {
+        const target = await this.findById(numId);
+        if (!target)
             return false;
-        }
-        const target = this.users.find(u => u.id_usuario === numId);
-        if (target && target.rol.toLowerCase() === 'admin') {
-            const adminCount = this.users.filter(u => u.rol.toLowerCase() === 'admin').length;
-            if (adminCount <= 1) {
+        // Proteger al menos que quede 1 admin
+        if (target.rol.toLowerCase() === 'admin') {
+            const [admins] = await database_1.pool.query("SELECT COUNT(*) as count FROM user WHERE LOWER(role) = 'admin'");
+            if ((admins[0]?.count || 0) <= 1) {
                 return false;
             }
         }
-        const initialLen = this.users.length;
-        this.users = this.users.filter(u => u.id_usuario !== numId);
-        return this.users.length < initialLen;
+        const [result] = await database_1.pool.execute('DELETE FROM user WHERE id_user = ?', [numId]);
+        return result.affectedRows > 0;
     }
 }
 exports.UserAdapter = UserAdapter;
