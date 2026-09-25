@@ -8,8 +8,8 @@ class PlaceAdapter {
     }
     async ensureInitialSites() {
         try {
-            const [rows] = await database_1.pool.query('SELECT COUNT(*) as count FROM site');
-            const count = rows[0]?.count || 0;
+            const res = await database_1.pool.query('SELECT COUNT(*) as count FROM site');
+            const count = parseInt(res.rows[0]?.count || '0', 10);
             if (count === 0) {
                 const initialPlaces = [
                     ['Auditorio Principal', 'Campus Principal Cra 15 # 45-20', 'Edificio A - Fundadores', 'Auditorio 1'],
@@ -19,13 +19,13 @@ class PlaceAdapter {
                     ['Espacio Virtual Institucional', 'Plataforma Digital', 'Campus Virtual', 'Sala Digital']
                 ];
                 for (const p of initialPlaces) {
-                    await database_1.pool.query('INSERT INTO site (name, address, building, classroom) VALUES (?, ?, ?, ?)', p);
+                    await database_1.pool.query('INSERT INTO site (name, address, building, classroom) VALUES ($1, $2, $3, $4)', p);
                 }
-                console.log('[PlaceAdapter] Lugares/Sitios iniciales sembrados en MySQL con éxito.');
+                console.log('[PlaceAdapter] Lugares/Sitios iniciales sembrados en PostgreSQL con éxito.');
             }
         }
         catch (err) {
-            console.warn('[PlaceAdapter] Advertencia al verificar/sembrar sitios iniciales:', err.message);
+            console.warn('[PlaceAdapter] Advertencia al verificar/sembrar sitios en PostgreSQL:', err.message);
         }
     }
     mapRowToPlace(row) {
@@ -38,20 +38,20 @@ class PlaceAdapter {
         };
     }
     async findAll() {
-        const [rows] = await database_1.pool.query('SELECT * FROM site ORDER BY id_site ASC');
-        return rows.map((r) => this.mapRowToPlace(r));
+        const res = await database_1.pool.query('SELECT * FROM site ORDER BY id_site ASC');
+        return res.rows.map((r) => this.mapRowToPlace(r));
     }
     async findById(id) {
-        const [rows] = await database_1.pool.query('SELECT * FROM site WHERE id_site = ? LIMIT 1', [Number(id)]);
-        if (!rows || rows.length === 0)
+        const res = await database_1.pool.query('SELECT * FROM site WHERE id_site = $1 LIMIT 1', [Number(id)]);
+        if (!res.rows || res.rows.length === 0)
             return null;
-        return this.mapRowToPlace(rows[0]);
+        return this.mapRowToPlace(res.rows[0]);
     }
     async create(placeData) {
-        const [result] = await database_1.pool.execute('INSERT INTO site (name, address, building, classroom) VALUES (?, ?, ?, ?)', [placeData.nombre, placeData.direccion || null, placeData.edificio || null, placeData.aula || null]);
-        const created = await this.findById(result.insertId);
+        const res = await database_1.pool.query('INSERT INTO site (name, address, building, classroom) VALUES ($1, $2, $3, $4) RETURNING id_site', [placeData.nombre, placeData.direccion || null, placeData.edificio || null, placeData.aula || null]);
+        const created = await this.findById(res.rows[0].id_site);
         if (!created) {
-            throw new Error('Error al recuperar el sitio creado en MySQL');
+            throw new Error('Error al recuperar el sitio creado en PostgreSQL');
         }
         return created;
     }

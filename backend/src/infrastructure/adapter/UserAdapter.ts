@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { UserPort } from '../../domain/UserPort';
 import { User } from '../../domain/User';
 import { pool } from '../config/database';
@@ -14,33 +13,33 @@ export class UserAdapter implements UserPort {
    */
   private async ensureInitialAdmin(): Promise<void> {
     try {
-      const [rows] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) as count FROM user');
-      const count = rows[0]?.count || 0;
+      const res = await pool.query('SELECT COUNT(*) as count FROM "user"');
+      const count = parseInt(res.rows[0]?.count || '0', 10);
       if (count === 0) {
         const hash = bcrypt.hashSync('admin123', 10);
         await pool.query(
-          `INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           ['Carlos', 'Mendoza', 'admin@unite.edu.co', hash, true, '3001234567', 'Admin']
         );
 
         const bienestarHash = bcrypt.hashSync('bienestar123', 10);
         await pool.query(
-          `INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           ['María Elena', 'Restrepo', 'bienestar@unite.edu.co', bienestarHash, true, '3109876543', 'Bienestar']
         );
 
         const liderHash = bcrypt.hashSync('lider123', 10);
         await pool.query(
-          `INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           ['Juan Pablo', 'Ríos', 'lider@unite.edu.co', liderHash, true, '3205557890', 'Lider']
         );
-        console.log('[UserAdapter] Usuarios iniciales sembrados en MySQL con éxito.');
+        console.log('[UserAdapter] Usuarios iniciales sembrados en PostgreSQL con éxito.');
       }
     } catch (err: any) {
-      console.warn('[UserAdapter] Advertencia al verificar/sembrar usuarios iniciales:', err.message);
+      console.warn('[UserAdapter] Advertencia al verificar/sembrar usuarios en Postgres:', err.message);
     }
   }
 
@@ -69,43 +68,44 @@ export class UserAdapter implements UserPort {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM user WHERE LOWER(email) = LOWER(?) LIMIT 1',
+    const res = await pool.query(
+      'SELECT * FROM "user" WHERE LOWER(email) = LOWER($1) LIMIT 1',
       [email]
     );
-    if (!rows || rows.length === 0) return null;
-    return this.mapRowToUser(rows[0]);
+    if (!res.rows || res.rows.length === 0) return null;
+    return this.mapRowToUser(res.rows[0]);
   }
 
   async findByRole(role: string): Promise<User | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM user WHERE LOWER(role) = LOWER(?) LIMIT 1',
+    const res = await pool.query(
+      'SELECT * FROM "user" WHERE LOWER(role::text) = LOWER($1) LIMIT 1',
       [role]
     );
-    if (!rows || rows.length === 0) return null;
-    return this.mapRowToUser(rows[0]);
+    if (!res.rows || res.rows.length === 0) return null;
+    return this.mapRowToUser(res.rows[0]);
   }
 
   async findById(id: number | string): Promise<User | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM user WHERE id_user = ? LIMIT 1',
+    const res = await pool.query(
+      'SELECT * FROM "user" WHERE id_user = $1 LIMIT 1',
       [Number(id)]
     );
-    if (!rows || rows.length === 0) return null;
-    return this.mapRowToUser(rows[0]);
+    if (!res.rows || res.rows.length === 0) return null;
+    return this.mapRowToUser(res.rows[0]);
   }
 
   async findAll(): Promise<User[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM user ORDER BY id_user ASC'
+    const res = await pool.query(
+      'SELECT * FROM "user" ORDER BY id_user ASC'
     );
-    return rows.map((r: any) => this.mapRowToUser(r));
+    return res.rows.map((r: any) => this.mapRowToUser(r));
   }
 
   async create(userData: Omit<User, 'id_usuario'>): Promise<User> {
-    const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO user (name_user, subname, email, password_hash, status, phone_number, role)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    const res = await pool.query(
+      `INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id_user`,
       [
         userData.nombre,
         userData.apellido,
@@ -117,10 +117,10 @@ export class UserAdapter implements UserPort {
       ]
     );
 
-    const insertedId = result.insertId;
+    const insertedId = res.rows[0].id_user;
     const createdUser = await this.findById(insertedId);
     if (!createdUser) {
-      throw new Error('Error al recuperar el usuario creado en MySQL');
+      throw new Error('Error al recuperar el usuario creado en PostgreSQL');
     }
     return createdUser;
   }
@@ -138,9 +138,9 @@ export class UserAdapter implements UserPort {
     const updatedRol = data.rol !== undefined ? data.rol : currentUser.rol;
 
     await pool.query(
-      `UPDATE user 
-       SET name_user = ?, subname = ?, email = ?, password_hash = ?, status = ?, phone_number = ?, role = ?
-       WHERE id_user = ?`,
+      `UPDATE "user" 
+       SET name_user = $1, subname = $2, email = $3, password_hash = $4, status = $5, phone_number = $6, role = $7
+       WHERE id_user = $8`,
       [
         updatedNombre,
         updatedApellido,
@@ -157,11 +157,11 @@ export class UserAdapter implements UserPort {
   }
 
   async updateStatus(id: number, estado: boolean): Promise<boolean> {
-    const [result] = await pool.execute<ResultSetHeader>(
-      'UPDATE user SET status = ? WHERE id_user = ?',
+    const res = await pool.query(
+      'UPDATE "user" SET status = $1 WHERE id_user = $2',
       [estado, Number(id)]
     );
-    return result.affectedRows > 0;
+    return (res.rowCount ?? 0) > 0;
   }
 
   async delete(id: number): Promise<boolean> {
@@ -171,18 +171,19 @@ export class UserAdapter implements UserPort {
 
     // Proteger al menos que quede 1 admin
     if (target.rol.toLowerCase() === 'admin') {
-      const [admins] = await pool.query<RowDataPacket[]>(
-        "SELECT COUNT(*) as count FROM user WHERE LOWER(role) = 'admin'"
+      const res = await pool.query(
+        "SELECT COUNT(*) as count FROM \"user\" WHERE LOWER(role::text) = 'admin'"
       );
-      if ((admins[0]?.count || 0) <= 1) {
+      const adminCount = parseInt(res.rows[0]?.count || '0', 10);
+      if (adminCount <= 1) {
         return false;
       }
     }
 
-    const [result] = await pool.execute<ResultSetHeader>(
-      'DELETE FROM user WHERE id_user = ?',
+    const res = await pool.query(
+      'DELETE FROM "user" WHERE id_user = $1',
       [numId]
     );
-    return result.affectedRows > 0;
+    return (res.rowCount ?? 0) > 0;
   }
 }

@@ -23,9 +23,9 @@ function validateEnvVars(vars: NodeJS.ProcessEnv): ValidationEnvironmentVars {
     .object({
       PORT: joi.number().default(3000),
       DB_HOST: joi.string().default('localhost'),
-      DB_PORT: joi.number().default(3306),
-      DB_USER: joi.string().default('root'),
-      DB_PASSWORD: joi.string().allow('').default(''),
+      DB_PORT: joi.number().default(5432),
+      DB_USER: joi.string().default('postgres'),
+      DB_PASSWORD: joi.string().allow('').default('1234'),
       DB_NAME: joi.string().default('calendarunite'),
       JWT_SECRET: joi.string().default('super_secret_jwt_key_calendarunite_2026'),
       JWT_EXPIRES_IN: joi.string().default('8h'),

@@ -1,4 +1,3 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { AttachmentPort } from '../../domain/AttachmentPort';
 import { Attachment } from '../../domain/Attachment';
 import { pool } from '../config/database';
@@ -17,8 +16,10 @@ export class AttachmentAdapter implements AttachmentPort {
   }
 
   async save(attachmentData: Omit<Attachment, 'id_archivo'>): Promise<Attachment> {
-    const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO attached_file (id_user, name, type, url, size) VALUES (?, ?, ?, ?, ?)',
+    const res = await pool.query(
+      `INSERT INTO attached_file (id_user, name, type, url, size) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING *`,
       [
         attachmentData.id_usuario,
         attachmentData.nombre || null,
@@ -28,36 +29,31 @@ export class AttachmentAdapter implements AttachmentPort {
       ]
     );
 
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM attached_file WHERE id_archive = ?',
-      [result.insertId]
-    );
-
-    if (rows && rows.length > 0) {
-      return this.mapRowToAttachment(rows[0]);
+    if (res.rows && res.rows.length > 0) {
+      return this.mapRowToAttachment(res.rows[0]);
     }
 
     return {
-      id_archivo: result.insertId,
+      id_archivo: 0,
       fecha_subida: new Date(),
       ...attachmentData
     };
   }
 
   async findByUserId(userId: number): Promise<Attachment[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM attached_file WHERE id_user = ? ORDER BY id_archive DESC',
+    const res = await pool.query(
+      'SELECT * FROM attached_file WHERE id_user = $1 ORDER BY id_archive DESC',
       [Number(userId)]
     );
-    return rows.map((r: any) => this.mapRowToAttachment(r));
+    return res.rows.map((r: any) => this.mapRowToAttachment(r));
   }
 
   async findByUrl(url: string): Promise<Attachment | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM attached_file WHERE url = ? LIMIT 1',
+    const res = await pool.query(
+      'SELECT * FROM attached_file WHERE url = $1 LIMIT 1',
       [url]
     );
-    if (!rows || rows.length === 0) return null;
-    return this.mapRowToAttachment(rows[0]);
+    if (!res.rows || res.rows.length === 0) return null;
+    return this.mapRowToAttachment(res.rows[0]);
   }
 }

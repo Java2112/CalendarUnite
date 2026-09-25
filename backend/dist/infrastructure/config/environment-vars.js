@@ -10,9 +10,9 @@ function validateEnvVars(vars) {
         .object({
         PORT: joi_1.default.number().default(3000),
         DB_HOST: joi_1.default.string().default('localhost'),
-        DB_PORT: joi_1.default.number().default(3306),
-        DB_USER: joi_1.default.string().default('root'),
-        DB_PASSWORD: joi_1.default.string().allow('').default(''),
+        DB_PORT: joi_1.default.number().default(5432),
+        DB_USER: joi_1.default.string().default('postgres'),
+        DB_PASSWORD: joi_1.default.string().allow('').default('1234'),
         DB_NAME: joi_1.default.string().default('calendarunite'),
         JWT_SECRET: joi_1.default.string().default('super_secret_jwt_key_calendarunite_2026'),
         JWT_EXPIRES_IN: joi_1.default.string().default('8h'),

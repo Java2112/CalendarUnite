@@ -6,7 +6,6 @@ class EventAdapter {
     placeAdapter;
     userAdapter;
     attachmentAdapter;
-    // Manejo de asistentes registrados en memoria / con tabla registration_activities
     inMemoryAttendees = [];
     constructor(placeAdapter, userAdapter, attachmentAdapter) {
         this.placeAdapter = placeAdapter;
@@ -16,63 +15,59 @@ class EventAdapter {
     }
     async ensureInitialEvents() {
         try {
-            // Esperar brevemente a que los seeds de user y site se completen si la BD está recién inicializada
             await new Promise(resolve => setTimeout(resolve, 800));
-            const [rows] = await database_1.pool.query('SELECT COUNT(*) as count FROM event');
-            const count = rows[0]?.count || 0;
+            const res = await database_1.pool.query('SELECT COUNT(*) as count FROM event');
+            const count = parseInt(res.rows[0]?.count || '0', 10);
             if (count === 0) {
-                // Verificar si existen sitios y usuarios
-                const [sites] = await database_1.pool.query('SELECT id_site FROM site LIMIT 5');
-                const [users] = await database_1.pool.query('SELECT id_user FROM user LIMIT 5');
-                if (sites.length === 0 || users.length === 0) {
+                const sitesRes = await database_1.pool.query('SELECT id_site FROM site LIMIT 5');
+                const usersRes = await database_1.pool.query('SELECT id_user FROM "user" LIMIT 5');
+                if (sitesRes.rows.length === 0 || usersRes.rows.length === 0) {
                     return;
                 }
-                const fallbackSiteId = sites[0].id_site;
-                const fallbackUserId = users[0].id_user;
                 const initialEvents = [
                     {
                         name: 'Hablemos: Manejo de Ansiedad en Parciales',
                         modality: 'Virtual',
-                        link_virtual: JSON.stringify(['https://meet.google.com/abc-defg-hij']),
+                        link_virtual: ['https://meet.google.com/abc-defg-hij'],
                         description: 'Espacio de acompañamiento psicológico virtual y preguntas en línea sobre cómo afrontar la carga académica.',
                         start_date: '2026-09-18',
                         end_date: '2026-09-18',
                         start_hour: '08:00:00',
                         end_hour: '09:30:00',
                         status: 'Activo',
-                        id_site: 5,
-                        id_in_charge: 2
+                        id_site: sitesRes.rows[4]?.id_site || sitesRes.rows[0].id_site,
+                        id_in_charge: usersRes.rows[1]?.id_user || usersRes.rows[0].id_user
                     },
                     {
                         name: 'Inducción Coro y Ensamble Universitario',
                         modality: 'Presencial',
-                        link_virtual: JSON.stringify([]),
+                        link_virtual: [],
                         description: 'Encuentro e integración para estudiantes interesados en formar parte del coro institucional y agrupaciones musicales.',
                         start_date: '2026-09-18',
                         end_date: '2026-09-18',
                         start_hour: '16:00:00',
                         end_hour: '18:00:00',
                         status: 'Activo',
-                        id_site: 2,
-                        id_in_charge: 2
+                        id_site: sitesRes.rows[1]?.id_site || sitesRes.rows[0].id_site,
+                        id_in_charge: usersRes.rows[1]?.id_user || usersRes.rows[0].id_user
                     },
                     {
                         name: 'Torneo Relámpago de Fútsal Mixto Nocturno',
                         modality: 'Presencial',
-                        link_virtual: JSON.stringify([]),
+                        link_virtual: [],
                         description: 'Gran torneo relámpago interfacultades para estudiantes. Habrá premiación e hidratación deportiva.',
                         start_date: '2026-09-22',
                         end_date: '2026-09-22',
                         start_hour: '18:30:00',
                         end_hour: '21:30:00',
                         status: 'Activo',
-                        id_site: 3,
-                        id_in_charge: 3
+                        id_site: sitesRes.rows[2]?.id_site || sitesRes.rows[0].id_site,
+                        id_in_charge: usersRes.rows[2]?.id_user || usersRes.rows[0].id_user
                     }
                 ];
                 for (const e of initialEvents) {
                     await database_1.pool.query(`INSERT INTO event (name, modality, link_virtual, description, start_date, end_date, start_hour, end_hour, status, id_site, id_in_charge)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, [
                         e.name,
                         e.modality,
                         e.link_virtual,
@@ -86,11 +81,11 @@ class EventAdapter {
                         e.id_in_charge
                     ]);
                 }
-                console.log('[EventAdapter] Eventos iniciales sembrados en MySQL con éxito.');
+                console.log('[EventAdapter] Eventos iniciales sembrados en PostgreSQL con éxito.');
             }
         }
         catch (err) {
-            console.warn('[EventAdapter] Advertencia al verificar/sembrar eventos iniciales:', err.message);
+            console.warn('[EventAdapter] Advertencia al verificar/sembrar eventos en PostgreSQL:', err.message);
         }
     }
     parseLinks(linkVal) {
@@ -163,37 +158,41 @@ class EventAdapter {
     async findAll(modality, search) {
         let sql = 'SELECT * FROM event WHERE 1=1';
         const params = [];
+        let paramIndex = 1;
         if (modality && modality !== 'Todas') {
-            sql += ' AND LOWER(modality) = LOWER(?)';
+            sql += ` AND LOWER(modality::text) = LOWER($${paramIndex})`;
             params.push(modality);
+            paramIndex++;
         }
         if (search) {
-            sql += ' AND (LOWER(name) LIKE ? OR LOWER(description) LIKE ?)';
+            sql += ` AND (LOWER(name) LIKE $${paramIndex} OR LOWER(description) LIKE $${paramIndex})`;
             const term = `%${search.toLowerCase()}%`;
-            params.push(term, term);
+            params.push(term);
+            paramIndex++;
         }
         sql += ' ORDER BY id_event DESC';
-        const [rows] = await database_1.pool.query(sql, params);
-        const mapped = rows.map((r) => this.mapRowToEvent(r));
+        const res = await database_1.pool.query(sql, params);
+        const mapped = res.rows.map((r) => this.mapRowToEvent(r));
         return Promise.all(mapped.map(e => this.enrichEvent(e)));
     }
     async findById(id) {
         const cleanId = String(id).replace(/^evt-/, '');
-        const [rows] = await database_1.pool.query('SELECT * FROM event WHERE id_event = ? LIMIT 1', [Number(cleanId)]);
-        if (!rows || rows.length === 0)
+        const res = await database_1.pool.query('SELECT * FROM event WHERE id_event = $1 LIMIT 1', [Number(cleanId)]);
+        if (!res.rows || res.rows.length === 0)
             return null;
-        const event = this.mapRowToEvent(rows[0]);
+        const event = this.mapRowToEvent(res.rows[0]);
         return this.enrichEvent(event);
     }
     async create(eventData, bannerUrl) {
         const rawModality = eventData.modalidad || 'Presencial';
         const modalityToSave = rawModality === 'Virtual' ? 'Virtual' : 'Presencial';
-        const linkStr = JSON.stringify(eventData.link_virtual || []);
-        const [result] = await database_1.pool.execute(`INSERT INTO event (name, modality, link_virtual, description, start_date, end_date, start_hour, end_hour, status, id_site, id_in_charge)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        const linkArray = Array.isArray(eventData.link_virtual) ? eventData.link_virtual : [];
+        const res = await database_1.pool.query(`INSERT INTO event (name, modality, link_virtual, description, start_date, end_date, start_hour, end_hour, status, id_site, id_in_charge)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING id_event`, [
             eventData.nombre,
             modalityToSave,
-            linkStr,
+            linkArray,
             eventData.descripcion || '',
             eventData.fecha_inicio,
             eventData.fecha_fin || eventData.fecha_inicio,
@@ -203,9 +202,9 @@ class EventAdapter {
             eventData.id_lugar,
             eventData.id_responsable
         ]);
-        const created = await this.findById(result.insertId);
+        const created = await this.findById(res.rows[0].id_event);
         if (!created) {
-            throw new Error('No se pudo recuperar el evento creado en MySQL');
+            throw new Error('No se pudo recuperar el evento creado en PostgreSQL');
         }
         return created;
     }
@@ -215,7 +214,7 @@ class EventAdapter {
             return null;
         const name = data.nombre !== undefined ? data.nombre : existing.nombre;
         const modality = data.modalidad !== undefined ? (data.modalidad === 'Virtual' ? 'Virtual' : 'Presencial') : (existing.modalidad === 'Virtual' ? 'Virtual' : 'Presencial');
-        const links = data.link_virtual !== undefined ? JSON.stringify(data.link_virtual) : JSON.stringify(existing.link_virtual);
+        const links = data.link_virtual !== undefined ? (Array.isArray(data.link_virtual) ? data.link_virtual : [data.link_virtual]) : (existing.link_virtual || []);
         const desc = data.descripcion !== undefined ? data.descripcion : existing.descripcion;
         const startDate = data.fecha_inicio !== undefined ? data.fecha_inicio : existing.fecha_inicio;
         const endDate = data.fecha_fin !== undefined ? data.fecha_fin : (existing.fecha_fin || existing.fecha_inicio);
@@ -225,8 +224,8 @@ class EventAdapter {
         const idSite = data.id_lugar !== undefined ? data.id_lugar : existing.id_lugar;
         const idResp = data.id_responsable !== undefined ? data.id_responsable : existing.id_responsable;
         await database_1.pool.query(`UPDATE event 
-       SET name = ?, modality = ?, link_virtual = ?, description = ?, start_date = ?, end_date = ?, start_hour = ?, end_hour = ?, status = ?, id_site = ?, id_in_charge = ?
-       WHERE id_event = ?`, [
+       SET name = $1, modality = $2, link_virtual = $3, description = $4, start_date = $5, end_date = $6, start_hour = $7, end_hour = $8, status = $9, id_site = $10, id_in_charge = $11
+       WHERE id_event = $12`, [
             name,
             modality,
             links,
@@ -243,8 +242,8 @@ class EventAdapter {
         return this.findById(id);
     }
     async delete(id) {
-        const [result] = await database_1.pool.execute('DELETE FROM event WHERE id_event = ?', [Number(id)]);
-        return result.affectedRows > 0;
+        const res = await database_1.pool.query('DELETE FROM event WHERE id_event = $1', [Number(id)]);
+        return (res.rowCount ?? 0) > 0;
     }
     async findAttendeeByEventAndEmail(eventId, email) {
         const cleanId = eventId.replace(/^evt-/, '');
@@ -256,16 +255,16 @@ class EventAdapter {
         return attendee;
     }
     async updateAvailableSpots(eventId, spots) {
-        // Para extensión opcional con columnas de capacidad
+        // Extensión opcional
     }
     async getStats() {
-        const [totalRows] = await database_1.pool.query('SELECT COUNT(*) as total FROM event');
-        const [presencialRows] = await database_1.pool.query("SELECT COUNT(*) as total FROM event WHERE modality = 'Presencial'");
-        const [virtualRows] = await database_1.pool.query("SELECT COUNT(*) as total FROM event WHERE modality = 'Virtual'");
+        const totalRes = await database_1.pool.query('SELECT COUNT(*) as total FROM event');
+        const presencialRes = await database_1.pool.query("SELECT COUNT(*) as total FROM event WHERE modality::text = 'Presencial'");
+        const virtualRes = await database_1.pool.query("SELECT COUNT(*) as total FROM event WHERE modality::text = 'Virtual'");
         return {
-            totalEvents: totalRows[0]?.total || 0,
-            presenciales: presencialRows[0]?.total || 0,
-            virtuales: virtualRows[0]?.total || 0,
+            totalEvents: parseInt(totalRes.rows[0]?.total || '0', 10),
+            presenciales: parseInt(presencialRes.rows[0]?.total || '0', 10),
+            virtuales: parseInt(virtualRes.rows[0]?.total || '0', 10),
             nocturnas: 0
         };
     }
