@@ -23,10 +23,10 @@ export interface CalendarDay {
       <!-- Sección principal del Banner con el título y estadísticas -->
       <section class="hero-banner">
         <div class="hero-content">
-          <span class="hero-badge">Portal Oficial de Actividades Extracurriculares</span>
-          <h1>Cronograma de Actividades de Bienestar Universitario</h1>
+          <span class="hero-badge">Uniempresarial • Bienestar Universitario</span>
+          <h1>Agenda y Cronograma de Actividades Universitarias</h1>
           <p>
-            Consulta y participa en las jornadas de salud mental, actividades deportivas, talleres culturales y eventos institucionales disponibles para la comunidad estudiantil.
+            Consulta y participa en las jornadas de formación integral, salud mental, deportes, cultura y eventos institucionales de la Fundación Universitaria Empresarial de la Cámara de Comercio de Bogotá.
           </p>
           
           <!-- Tarjetas de Estadísticas Globales (Obtenidas dinámicamente desde el EventService) -->
@@ -264,56 +264,75 @@ export interface CalendarDay {
     </div>
   `
 })
+// Componente del cronograma y calendario interactivo de actividades
 export class CalendarComponent implements OnInit {
+  // Evento emitido al hacer clic en un evento para abrir su detalle
   @Output() selectEvent = new EventEmitter<EventItem>();
 
+  // Lista de modalidades disponibles para el filtro
   modalities: ModalityType[] = ['Todas', 'Presencial', 'Virtual', 'Nocturna'];
+  // Modalidad seleccionada actualmente
   selectedModality: ModalityType = 'Todas';
+  // Texto de búsqueda ingresado por el usuario
   searchQuery: string = '';
+  // Modo de visualización de eventos ('grid' o 'list')
   viewMode: 'grid' | 'list' = 'grid';
 
+  // Fecha base para la navegación del calendario mensual
   currentDate: Date = new Date(2026, 8, 1);
+  // Fecha específica seleccionada para filtrar
   selectedDate: string | null = null;
+  // Celdas calculadas para la cuadrícula del calendario
   calendarDays: CalendarDay[] = [];
 
+  // Inyecta el servicio de eventos
   constructor(public eventService: EventService) {}
 
+  // Total de eventos calculados
   get totalEventsCount(): number {
     return this.eventService.stats()?.totalEvents || 0;
   }
 
+  // Total de eventos presenciales
   get presencialesCount(): number {
     return this.eventService.stats()?.presenciales || 0;
   }
 
+  // Total de eventos virtuales
   get virtualesCount(): number {
     return this.eventService.stats()?.virtuales || 0;
   }
 
+  // Total de eventos nocturnos
   get nocturnasCount(): number {
     return this.eventService.stats()?.nocturnas || 0;
   }
 
+  // Inicializa el componente cargando eventos y construyendo el calendario
   ngOnInit(): void {
     this.fetchData();
     this.buildCalendarGrid();
   }
 
+  // Nombre del mes actualmente visualizado
   get currentMonthName(): string {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return months[this.currentDate.getMonth()];
   }
 
+  // Año actual del calendario
   get currentYear(): number {
     return this.currentDate.getFullYear();
   }
 
+  // Formato legible de la fecha seleccionada
   get selectedDateDisplay(): string {
     if (!this.selectedDate) return '';
     const parts = this.selectedDate.split('-');
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
+  // Lista de eventos filtrados por fecha si está seleccionada
   get filteredEvents(): EventItem[] {
     let list = this.eventService.events();
     if (this.selectedDate) {
@@ -322,6 +341,7 @@ export class CalendarComponent implements OnInit {
     return list;
   }
 
+  // Consulta los eventos al servicio con los filtros aplicados
   fetchData(): void {
     this.eventService.loadEvents(this.selectedModality, this.searchQuery).subscribe({
       next: () => this.buildCalendarGrid(),
@@ -329,15 +349,18 @@ export class CalendarComponent implements OnInit {
     });
   }
 
+  // Establece la modalidad seleccionada y recarga
   setModality(mod: ModalityType): void {
     this.selectedModality = mod;
     this.fetchData();
   }
 
+  // Maneja cambios en los filtros de búsqueda
   onFilterChange(): void {
     this.fetchData();
   }
 
+  // Restablece todos los filtros a sus valores por defecto
   resetFilters(): void {
     this.selectedModality = 'Todas';
     this.searchQuery = '';
@@ -345,20 +368,24 @@ export class CalendarComponent implements OnInit {
     this.fetchData();
   }
 
+  // Limpia el filtro por fecha seleccionada
   clearDateFilter(): void {
     this.selectedDate = null;
   }
 
+  // Retrocede al mes anterior en el calendario
   prevMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
     this.buildCalendarGrid();
   }
 
+  // Avanza al siguiente mes en el calendario
   nextMonth(): void {
     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
     this.buildCalendarGrid();
   }
 
+  // Maneja la selección o deselección de un día en la cuadrícula
   selectCalendarDay(cell: CalendarDay): void {
     if (!cell.isCurrentMonth) return;
     if (this.selectedDate === cell.dateStr) {
@@ -368,6 +395,7 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  // Construye la cuadrícula de días del mes con sus eventos asociados
   buildCalendarGrid(): void {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
@@ -380,6 +408,7 @@ export class CalendarComponent implements OnInit {
 
     const cells: CalendarDay[] = [];
 
+    // Agrega celdas de relleno para los días previos al inicio de mes
     for (let i = 0; i < paddingDays; i++) {
       cells.push({
         dayNumber: 0,
@@ -391,6 +420,7 @@ export class CalendarComponent implements OnInit {
       });
     }
 
+    // Genera las celdas correspondientes a cada día del mes
     for (let day = 1; day <= daysInMonth; day++) {
       const dayStr = day < 10 ? `0${day}` : `${day}`;
       const monthStr = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
@@ -412,6 +442,7 @@ export class CalendarComponent implements OnInit {
     this.calendarDays = cells;
   }
 
+  // Determina la clase CSS para el punto indicador según la categoría
   getDotClass(category: string): string {
     if (category.includes('Psicología') || category.includes('Salud')) return 'dot-salud';
     if (category.includes('Deportes')) return 'dot-deporte';
@@ -419,6 +450,7 @@ export class CalendarComponent implements OnInit {
     return 'dot-desarrollo';
   }
 
+  // Emite el evento seleccionado hacia el componente padre
   onSelect(evt: EventItem): void {
     this.selectEvent.emit(evt);
   }

@@ -1,25 +1,38 @@
+// Importa decoradores y funciones de señales reactivas de Angular
 import { Injectable, signal, computed } from '@angular/core';
+// Importa el cliente HTTP y utilidades para parámetros de Angular
 import { HttpClient, HttpParams } from '@angular/common/http';
+// Importa operadores de RxJS para manejo de flujos asíncronos y errores
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { EventItem, RegisterRequest, StatsSummary, CreateEventRequest, UpdateEventRequest } from '../models/event.model';
+// Importa interfaces y tipos del modelo de eventos
+import { EventItem, RegisterAttendeeRequest, EventStats, CreateEventRequest, UpdateEventRequest } from '../models/event.model';
+// Importa el modelo de lugares
 import { Place } from '../models/place.model';
+// Importa el servicio de autenticación
 import { AuthService } from './auth.service';
 
+// Declara el servicio inyectable a nivel raíz
 @Injectable({
   providedIn: 'root'
 })
+// Servicio que gestiona la carga, creación, edición, eliminación y registro de eventos
 export class EventService {
+  // URL base del backend
   private apiUrl = 'http://localhost:3000/api';
 
-  // Signals reactivas para el estado global de la app
+  // Señal reactiva con la lista de eventos
   public events = signal<EventItem[]>([]);
+  // Señal reactiva con el evento seleccionado para ver en detalle
   public selectedEvent = signal<EventItem | null>(null);
+  // Señal reactiva de estado de carga
   public isLoading = signal<boolean>(false);
+  // Señal reactiva para errores de conexión con el backend
   public backendError = signal<string | null>(null);
+  // Señal reactiva con la lista de lugares del campus
   public places = signal<Place[]>([]);
 
-  // Signal calculada (computed) para estadísticas
-  public stats = computed<StatsSummary>(() => {
+  // Valor computado para calcular el resumen de estadísticas
+  public stats = computed<EventStats>(() => {
     const list = this.events();
     return {
       totalEvents: list.length,
@@ -29,12 +42,13 @@ export class EventService {
     };
   });
 
+  // Constructor que inyecta HttpClient y AuthService
   constructor(
     private http: HttpClient,
     private authService: AuthService
   ) {}
 
-  // Consulta eventos al backend Express
+  // Consulta eventos al backend Express con filtros de modalidad y búsqueda
   loadEvents(modality?: string, search?: string): Observable<EventItem[]> {
     this.isLoading.set(true);
     this.backendError.set(null);
@@ -50,7 +64,6 @@ export class EventService {
     return this.http.get<EventItem[]>(`${this.apiUrl}/events`, { params }).pipe(
       tap({
         next: (data) => {
-          // Normalizar items
           const normalized = data.map(e => this.normalizeEvent(e));
           this.events.set(normalized);
           this.isLoading.set(false);
@@ -64,7 +77,7 @@ export class EventService {
     );
   }
 
-  // Consulta lugares del campus
+  // Consulta los lugares del campus al backend
   loadPlaces(): Observable<Place[]> {
     return this.http.get<Place[]>(`${this.apiUrl}/places`).pipe(
       tap((data) => {
@@ -73,7 +86,7 @@ export class EventService {
     );
   }
 
-  // Crear nuevo evento (Líder, Bienestar, Admin)
+  // Envía solicitud para crear un nuevo evento al backend
   createEvent(eventData: CreateEventRequest): Observable<{ message: string; event: EventItem }> {
     return this.http.post<{ message: string; event: EventItem }>(
       `${this.apiUrl}/events`,
@@ -89,7 +102,7 @@ export class EventService {
     );
   }
 
-  // Editar evento existente (Con Ownership RBAC)
+  // Envía solicitud para actualizar un evento existente
   updateEvent(id: number | string, eventData: UpdateEventRequest): Observable<{ message: string; event: EventItem }> {
     return this.http.put<{ message: string; event: EventItem }>(
       `${this.apiUrl}/events/${id}`,
@@ -108,7 +121,7 @@ export class EventService {
     );
   }
 
-  // Eliminar evento (Con Ownership RBAC)
+  // Envía solicitud para eliminar un evento
   deleteEvent(id: number | string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(
       `${this.apiUrl}/events/${id}`,
@@ -123,8 +136,8 @@ export class EventService {
     );
   }
 
-  // Registra la inscripción de un estudiante
-  registerForEvent(eventId: string, registrationData: RegisterRequest): Observable<{ message: string; updatedAvailableSpots: number }> {
+  // Registra la inscripción de un estudiante a un evento
+  registerForEvent(eventId: string, registrationData: RegisterAttendeeRequest): Observable<{ message: string; updatedAvailableSpots: number }> {
     return this.http.post<{ message: string; updatedAvailableSpots: number }>(`${this.apiUrl}/events/${eventId}/register`, registrationData).pipe(
       tap((res) => {
         if (res && typeof res.updatedAvailableSpots === 'number') {
@@ -146,6 +159,7 @@ export class EventService {
     );
   }
 
+  // Normaliza y unifica las propiedades de un evento
   private normalizeEvent(e: any): EventItem {
     const numId = e.id_evento || (typeof e.id === 'string' && e.id.startsWith('evt-') ? parseInt(e.id.replace('evt-', ''), 10) : Number(e.id) || 1);
     const date = e.fecha_inicio || e.date || '';

@@ -1,33 +1,56 @@
 :root {
-  /* Paleta Oficial CalendarUnite */
-  --primary-blue: #003366;
-  --primary-blue-dark: #0A2342;
-  --primary-blue-light: #e6eef5;
+  /* ==========================================================================
+     PALETA CORPORATIVA OFICIAL - MANUAL DE IDENTIDAD VISUAL UNIEMPRESARIAL
+     Fundación Universitaria Empresarial de la Cámara de Comercio de Bogotá
+     ========================================================================== */
+  
+  /* Azul Institucional (Manual pág. 13 - R:14 G:31 B:135) */
+  --primary-blue: #0e1f87;
+  --primary-blue-dark: #07104a;
+  --primary-blue-light: #eef1fc;
+  --primary-blue-border: #ccd5f8;
 
-  --accent-red: #E31837;
-  --accent-red-hover: #C8102E;
-  --accent-red-light: #fce8ea;
+  /* Rojo Institucional Pantone 185 C (Manual pág. 13 - R:221 G:0 B:52) */
+  --accent-red: #dd0034;
+  --accent-red-hover: #b8002b;
+  --accent-red-light: #fde8ec;
+  --accent-red-border: #f9bcc7;
 
-  --bg-main: #F4F4F4;
-  --bg-canvas: #E5E5E5;
+  /* Colores de Programas Académicos (Manual pág. 16, 18, 42) */
+  --prog-software: #23AEE3;
+  --prog-industrial: #334394;
+  --prog-admin: #EE7A25;
+  --prog-marketing: #C0323A;
+  --prog-talento: #409246;
+  --prog-finanzas: #9E7A56;
+  --prog-negocios: #5F6467;
+  --prog-turismo: #4B2461;
+  --prog-produccion: #7662A7;
+  --prog-comercial: #F3951F;
+
+  /* Fondos y Neutros */
+  --bg-main: #f8fafc;
+  --bg-canvas: #f1f5f9;
   --bg-card: #FFFFFF;
   --bg-surface: #FFFFFF;
-  --text-dark: #333333;
-  --text-muted: #555555;
-  --border-color: #d1d5db;
+  --text-dark: #0f172a;
+  --text-muted: #475569;
+  --border-color: #e2e8f0;
   
-  --badge-presencial-bg: #e6eef5;
-  --badge-presencial-text: #003366;
-  --badge-virtual-bg: #d1fae5;
-  --badge-virtual-text: #065f46;
-  --badge-nocturna-bg: #fef3c7;
-  --badge-nocturna-text: #92400e;
+  /* Badges de Modalidad */
+  --badge-presencial-bg: #eef1fc;
+  --badge-presencial-text: #0e1f87;
+  --badge-virtual-bg: #ecfdf5;
+  --badge-virtual-text: #047857;
+  --badge-nocturna-bg: #fff7ed;
+  --badge-nocturna-text: #c2410c;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(14, 31, 135, 0.06);
+  --shadow-md: 0 4px 12px rgba(14, 31, 135, 0.08);
+  --shadow-lg: 0 12px 28px -4px rgba(14, 31, 135, 0.14), 0 4px 6px -2px rgba(14, 31, 135, 0.04);
 
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Tipografía Oficial: Poppins (Manual págs. 8, 9, 43) */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 * {
@@ -165,27 +188,61 @@ h3 {
 }
 
 .hero-banner {
-  background: var(--primary-blue);
+  background: linear-gradient(135deg, #0e1f87 0%, #07104a 100%);
   color: white;
-  padding: 2.5rem;
-  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  border-radius: 24px;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 16px 36px -6px rgba(14, 31, 135, 0.28);
   position: relative;
   overflow: hidden;
+  border-left: 6px solid var(--accent-red);
+}
+
+/* Elemento visual curvo característico del manual de identidad (págs. 1, 4, 7, 23, 38-41) */
+.hero-banner::after {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 50px solid rgba(221, 0, 52, 0.16);
+  pointer-events: none;
+}
+
+/* Punto rojo de acento icónico de Uniempresarial (Manual de Identidad) */
+.hero-banner::before {
+  content: '';
+  position: absolute;
+  top: 36px;
+  right: 180px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  box-shadow: 0 0 14px rgba(221, 0, 52, 0.7);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
 }
 
 .hero-badge {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   backdrop-filter: blur(8px);
-  padding: 0.35rem 0.85rem;
+  padding: 0.35rem 0.95rem;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 700;
   margin-bottom: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.02em;
 }
 
 .hero-content h1 {
@@ -223,8 +280,8 @@ h3 {
 }
 
 .stat-card.accent {
-  background: rgba(217, 4, 61, 0.35);
-  border-color: rgba(217, 4, 61, 0.6);
+  background: rgba(221, 0, 52, 0.35);
+  border-color: rgba(221, 0, 52, 0.6);
 }
 
 .stat-num {
@@ -1054,41 +1111,155 @@ button:disabled {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Footer institucional */
+/* ==========================================================================
+   FOOTER INSTITUCIONAL - UNIEMPRESARIAL & CÁMARA DE COMERCIO DE BOGOTÁ
+   ========================================================================== */
 .app-footer {
-  background-color: #003366;
+  background-color: var(--primary-blue-dark);
   color: #ffffff;
-  padding: 28px 20px;
-  margin-top: 50px;
-  border-top: 3px solid #E31837;
+  padding: 48px 24px 0 24px;
+  margin-top: 60px;
+  border-top: 4px solid var(--accent-red);
 }
 
 .app-footer .footer-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.3fr 2fr;
+  gap: 40px;
+  padding-bottom: 36px;
+}
+
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-logo-wrapper {
+  background: #ffffff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  display: inline-block;
+  width: fit-content;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.footer-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+
+.footer-institution {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.footer-affiliation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fca5a5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dot-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+  flex-shrink: 0;
+}
+
+.footer-snies {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.footer-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+.footer-col h4 {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.footer-col h4::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 24px;
+  height: 2px;
+  background-color: var(--accent-red);
+  border-radius: 2px;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-col li {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.footer-col li strong {
+  color: #ffffff;
+}
+
+.footer-bottom-bar {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 16px 0;
+}
+
+.footer-bottom-container {
   max-width: 1240px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-}
-
-.app-footer .footer-brand {
-  font-size: 15px;
-  color: #e6eef5;
-}
-
-.app-footer .footer-brand strong {
-  color: #ffffff;
-  font-weight: 700;
-}
-
-.app-footer .footer-links {
+  gap: 12px;
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #fce8ea;
-  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.footer-dual-tag {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .app-footer .footer-container {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 }
 
 /* ==========================================================================
@@ -1209,8 +1380,8 @@ button:disabled {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e6eef5;
-  color: var(--primary-blue, #003366);
+  background: #eef1fc;
+  color: var(--primary-blue, #0e1f87);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -120,7 +120,7 @@ import { EventItem } from '../../models/event.model';
                       [(ngModel)]="regData.correo" 
                       name="correo" 
                       required 
-                      placeholder="usuario@universidad.edu.co" />
+                      placeholder="usuario@uniempresarial.edu.co" />
                   </div>
 
                   <div class="form-group">

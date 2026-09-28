@@ -1,6 +1,10 @@
+// Importa decoradores y utilidades de componentes de Angular
 import { Component, Output, EventEmitter, Input } from '@angular/core';
+// Importa directivas comunes de Angular
 import { CommonModule } from '@angular/common';
+// Importa el servicio de autenticación
 import { AuthService } from '../../services/auth.service';
+// Importa el tipo de rol de usuario
 import { UserRole } from '../../models/user.model';
 
 @Component({
@@ -12,21 +16,14 @@ import { UserRole } from '../../models/user.model';
     <header class="navbar-header">
       <div class="navbar-container">
         
-        <!-- Sección izquierda: Logotipo y títulos de la aplicación -->
-        <div class="navbar-brand" (click)="setView('calendar')" style="cursor: pointer;">
-          <!-- Icono visual del calendario en formato SVG -->
-          <div class="logo-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-              <line x1="16" x2="16" y1="2" y2="6"/>
-              <line x1="8" x2="8" y1="2" y2="6"/>
-              <line x1="3" x2="21" y1="10" y2="10"/>
-              <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
-              <path d="M8 18h.01"/><path d="M12 18h.01"/>
-            </svg>
-          </div>
-          
-          <!-- Textos con el nombre del proyecto y subtítulo -->
+        <!-- Sección izquierda: Logotipo institucional y títulos de la aplicación -->
+        <div class="navbar-brand" (click)="setView('calendar')" style="cursor: pointer;" title="Ir a Cronograma CalendarUnite">
+          <img 
+            src="img/logo-completo.png" 
+            alt="Uniempresarial - Fundación Universitaria Empresarial de la Cámara de Comercio de Bogotá" 
+            class="brand-logo-img" 
+          />
+          <div class="brand-divider"></div>
           <div class="brand-text">
             <span class="brand-name">CalendarUnite</span>
             <span class="brand-sub">Bienestar Universitario</span>
@@ -135,14 +132,23 @@ import { UserRole } from '../../models/user.model';
       text-decoration: none;
     }
 
-    .logo-icon {
-      background: var(--primary-blue);
-      color: white;
-      padding: 8px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .brand-logo-img {
+      height: 42px;
+      width: auto;
+      max-width: 220px;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    .brand-logo-img:hover {
+      transform: scale(1.02);
+    }
+
+    .brand-divider {
+      width: 1.5px;
+      height: 32px;
+      background: var(--border-color, #e2e8f0);
     }
 
     .brand-text {
@@ -258,7 +264,7 @@ import { UserRole } from '../../models/user.model';
       height: 32px;
       border-radius: 50%;
       background: #e6eef5;
-      color: var(--primary-blue, #003366);
+      color: var(--primary-blue, #0e1f87);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -314,30 +320,43 @@ import { UserRole } from '../../models/user.model';
       .hide-mobile { display: none; }
       .nav-tab-btn span { display: none; }
       .nav-tab-btn { padding: 8px 10px; }
+      .brand-sub { display: none; }
+      .brand-logo-img { height: 32px; max-width: 140px; }
+      .brand-divider { height: 22px; }
+      .brand-name { font-size: 1.05rem; }
     }
   `]
 })
+// Componente de la barra de navegación superior institucional
 export class NavbarComponent {
+  // Propiedad de entrada que indica la vista actualmente activa
   @Input() currentView: 'calendar' | 'management' = 'calendar';
+  // Evento emitido para abrir el modal de inicio de sesión
   @Output() openLogin = new EventEmitter<void>();
+  // Evento emitido al cambiar de vista
   @Output() viewChange = new EventEmitter<'calendar' | 'management'>();
 
+  // Inyecta el servicio de autenticación públicamente para su uso en plantilla
   constructor(public authService: AuthService) {}
 
+  // Dispara el evento para desplegar el modal de login
   onOpenLogin(): void {
     this.openLogin.emit();
   }
 
+  // Cambia la vista activa y emite el evento al componente padre
   setView(view: 'calendar' | 'management'): void {
     this.currentView = view;
     this.viewChange.emit(view);
   }
 
+  // Cierra la sesión activa y retorna al cronograma público
   onLogout(): void {
     this.authService.logout();
     this.setView('calendar');
   }
 
+  // Traduce el identificador del rol a una etiqueta legible
   getRoleLabel(role?: string | null): string {
     if (!role) return '';
     switch (role.toLowerCase()) {

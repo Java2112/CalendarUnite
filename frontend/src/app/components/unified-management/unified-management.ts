@@ -424,7 +424,9 @@ import { UserFormComponent } from '../user-form/user-form';
     }
   `
 })
+// Componente del panel de gestión unificada para eventos, usuarios y lugares
 export class UnifiedManagementComponent implements OnInit {
+  // Pestaña activa ('events', 'places' o 'users')
   activeTab: 'events' | 'places' | 'users' = 'events';
 
   // Filtros de eventos
@@ -434,11 +436,11 @@ export class UnifiedManagementComponent implements OnInit {
   // Filtros de usuarios
   searchUserQuery: string = '';
 
-  // Datos reactivos
+  // Datos reactivos para lugares y usuarios
   places = signal<Place[]>([]);
   users = signal<User[]>([]);
 
-  // Estados de modales
+  // Estados de modales y elementos en edición
   isEventModalOpen: boolean = false;
   selectedEventToEdit: EventItem | null = null;
 
@@ -449,12 +451,14 @@ export class UnifiedManagementComponent implements OnInit {
   actionSuccessMessage: string | null = null;
   actionErrorMessage: string | null = null;
 
+  // Inyecta los servicios necesarios
   constructor(
     public eventService: EventService,
     public authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
+  // Inicializa cargando todos los catálogos
   ngOnInit(): void {
     this.refreshAll();
   }

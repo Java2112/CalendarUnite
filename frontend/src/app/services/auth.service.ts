@@ -1,25 +1,38 @@
+// Importa decoradores y funciones de señales reactivas de Angular
 import { Injectable, signal, computed } from '@angular/core';
+// Importa el cliente HTTP y encabezados de Angular
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+// Importa utilidades reactivas de RxJS
 import { Observable, tap } from 'rxjs';
+// Importa los modelos y tipos relacionados con usuarios y autenticación
 import { User, UserRole, AuthResponse, LoginCredentials, CreateUserRequest, UpdateUserRequest } from '../models/user.model';
 
+// Declara el servicio disponible en toda la aplicación
 @Injectable({
   providedIn: 'root'
 })
+// Servicio de gestión de autenticación, sesión y administración de usuarios
 export class AuthService {
+  // URL base del backend
   private apiUrl = 'http://localhost:3000/api';
+  // Clave para guardar la sesión en el almacenamiento local
   private STORAGE_KEY = 'calendarunite_auth';
 
-  // Signals reactivas para la sesión activa del usuario
+  // Señal reactiva con el usuario autenticado
   public currentUser = signal<User | null>(this.getStoredUser());
+  // Señal reactiva con el token JWT
   public activeToken = signal<string | null>(this.getStoredToken());
+  // Valor computado booleano que indica si hay sesión activa
   public isLoggedIn = computed<boolean>(() => this.currentUser() !== null);
+  // Valor computado con el rol del usuario en sesión
   public userRole = computed<UserRole | null>(() => this.currentUser()?.role || this.currentUser()?.rol || null);
+  // Señal reactiva que controla la visibilidad del modal de login
   public isAuthModalOpen = signal<boolean>(false);
 
+  // Inyecta el cliente HTTP
   constructor(private http: HttpClient) {}
 
-  // Autenticación estricta contra el servidor Backend con JWT
+  // Envía credenciales al backend para iniciar sesión con JWT
   login(credentials: LoginCredentials): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
       tap((res) => {
@@ -30,23 +43,24 @@ export class AuthService {
     );
   }
 
-  // Cierra la sesión activa
+  // Cierra la sesión activa y elimina datos del localStorage
   logout(): void {
     this.currentUser.set(null);
     this.activeToken.set(null);
     localStorage.removeItem(this.STORAGE_KEY);
   }
 
-  // Control del modal de login
+  // Abre el modal de inicio de sesión
   openLoginModal(): void {
     this.isAuthModalOpen.set(true);
   }
 
+  // Cierra el modal de inicio de sesión
   closeLoginModal(): void {
     this.isAuthModalOpen.set(false);
   }
 
-  // Comprueba si el usuario tiene alguno de los roles indicados
+  // Comprueba si el usuario autenticado tiene uno de los roles solicitados
   hasRole(roles: UserRole[]): boolean {
     const current = this.userRole();
     return current ? roles.some(r => r.toLowerCase() === current.toLowerCase()) : false;
@@ -57,7 +71,7 @@ export class AuthService {
     return this.activeToken();
   }
 
-  // Genera headers con Bearer token para solicitudes protegidas
+  // Construye encabezados HTTP con autorización Bearer JWT
   getAuthHeaders(): HttpHeaders {
     const token = this.getToken();
     return new HttpHeaders({
@@ -66,26 +80,26 @@ export class AuthService {
     });
   }
 
-  // ----------------------------------------------------
-  // GESTIÓN DE USUARIOS (EXCLUSIVO ADMINISTRADOR - RF9)
-  // ----------------------------------------------------
-
+  // Obtiene todos los usuarios (solo administrador)
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${this.apiUrl}/users`, { headers: this.getAuthHeaders() });
   }
 
+  // Registra un nuevo usuario (solo administrador)
   createUser(userData: CreateUserRequest): Observable<{ message: string; user: User }> {
     return this.http.post<{ message: string; user: User }>(`${this.apiUrl}/users`, userData, {
       headers: this.getAuthHeaders()
     });
   }
 
+  // Actualiza los datos de un usuario (solo administrador)
   updateUser(id: number, userData: UpdateUserRequest): Observable<{ message: string; user: User }> {
     return this.http.put<{ message: string; user: User }>(`${this.apiUrl}/users/${id}`, userData, {
       headers: this.getAuthHeaders()
     });
   }
 
+  // Cambia el estado de activación de un usuario
   toggleUserStatus(id: number, estado: boolean): Observable<{ message: string; success: boolean }> {
     return this.http.patch<{ message: string; success: boolean }>(
       `${this.apiUrl}/users/${id}/status`,
@@ -94,15 +108,15 @@ export class AuthService {
     );
   }
 
+  // Elimina un usuario por su ID
   deleteUser(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/users/${id}`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Guarda la sesión en localStorage y actualiza Signals
+  // Guarda la sesión en el almacenamiento local y actualiza las señales
   private setCurrentSession(user: User, token: string): void {
-    // Normalizar datos de usuario
     const normalized: User = {
       ...user,
       id_usuario: user.id_usuario || Number(user.id) || 1,
@@ -123,7 +137,7 @@ export class AuthService {
     }
   }
 
-  // Recupera el usuario guardado al recargar la página
+  // Recupera el usuario desde el almacenamiento local
   private getStoredUser(): User | null {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
@@ -137,7 +151,7 @@ export class AuthService {
     return null;
   }
 
-  // Recupera el token guardado
+  // Recupera el token guardado en el almacenamiento local
   private getStoredToken(): string | null {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);

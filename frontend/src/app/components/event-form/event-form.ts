@@ -262,11 +262,16 @@ import { EventService } from '../../services/event.service';
     </div>
   `
 })
+// Componente modal para crear o editar actividades
 export class EventFormComponent implements OnInit {
+  // Evento a editar recibido desde el componente padre (o null para crear nuevo)
   @Input() eventToEdit: EventItem | null = null;
+  // Evento emitido al cerrar el modal
   @Output() close = new EventEmitter<void>();
+  // Evento emitido cuando la actividad se guarda exitosamente
   @Output() saved = new EventEmitter<EventItem>();
 
+  // Campos del formulario
   nombre: string = '';
   modalidad: 'Presencial' | 'Virtual' | 'Nocturna' = 'Presencial';
   link_virtual: string[] = [];
@@ -280,19 +285,25 @@ export class EventFormComponent implements OnInit {
   totalSpots: number = 50;
   category: string = 'Psicología y Salud Mental';
 
+  // Catálogo de lugares cargado desde el backend
   places: Place[] = [];
+  // Estado de envío del formulario
   isSubmitting: boolean = false;
+  // Mensaje de error para mostrar en la alerta
   errorMessage: string | null = null;
 
+  // Propiedad computada que indica si estamos en modo edición
   get isEditing(): boolean {
     return this.eventToEdit !== null;
   }
 
+  // Constructor con servicios requeridos
   constructor(
     private eventService: EventService,
     private cdr: ChangeDetectorRef
   ) {}
 
+  // Inicializa el formulario cargando lugares y rellenando datos si es edición
   ngOnInit(): void {
     // Cargar catálogo de lugares
     this.eventService.loadPlaces().subscribe({
@@ -313,6 +324,7 @@ export class EventFormComponent implements OnInit {
       }
     });
 
+    // Si es edición, inicializa los campos con los valores del evento
     if (this.eventToEdit) {
       this.nombre = this.eventToEdit.nombre || this.eventToEdit.title || '';
       this.modalidad = (this.eventToEdit.modalidad || this.eventToEdit.modality || 'Presencial') as any;
@@ -327,7 +339,7 @@ export class EventFormComponent implements OnInit {
       this.category = this.eventToEdit.category || 'Psicología y Salud Mental';
       this.link_virtual = Array.isArray(this.eventToEdit.link_virtual) ? [...this.eventToEdit.link_virtual] : [];
     } else {
-      // Fecha por defecto mañana
+      // Si es nuevo, asigna fecha para mañana por defecto
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       this.fecha_inicio = tomorrow.toISOString().split('T')[0];
@@ -335,22 +347,27 @@ export class EventFormComponent implements OnInit {
     }
   }
 
+  // Agrega un nuevo campo de enlace virtual
   addVirtualLink(): void {
     this.link_virtual.push('');
   }
 
+  // Elimina un enlace virtual por índice
   removeVirtualLink(index: number): void {
     this.link_virtual.splice(index, 1);
   }
 
+  // Asigna imagen de respaldo si la URL falla
   onImageError(): void {
     this.banner_url = 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=600&q=80';
   }
 
+  // Cierra la ventana modal
   onClose(): void {
     this.close.emit();
   }
 
+  // Envía el formulario para crear o actualizar el evento
   onSubmit(): void {
     if (!this.nombre.trim() || !this.descripcion.trim() || !this.fecha_inicio) {
       this.errorMessage = 'Por favor completa los campos obligatorios: Nombre, Fecha de Inicio y Descripción.';

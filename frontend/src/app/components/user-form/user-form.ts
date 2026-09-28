@@ -79,7 +79,7 @@ import { AuthService } from '../../services/auth.service';
                   [(ngModel)]="correo"
                   name="correo"
                   required
-                  placeholder="ejemplo@unite.edu.co"
+                  placeholder="ejemplo@uniempresarial.edu.co"
                   class="form-input"
                   style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:6px; font-size:15px;"
                 />
@@ -164,11 +164,16 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `
 })
+// Componente modal para crear o editar usuarios del sistema
 export class UserFormComponent implements OnInit {
+  // Usuario a editar (o null para registrar nuevo)
   @Input() userToEdit: User | null = null;
+  // Evento emitido al cerrar el modal
   @Output() close = new EventEmitter<void>();
+  // Evento emitido cuando se guarda el usuario exitosamente
   @Output() saved = new EventEmitter<User>();
 
+  // Campos vinculados al formulario
   nombre: string = '';
   apellido: string = '';
   correo: string = '';
@@ -177,18 +182,23 @@ export class UserFormComponent implements OnInit {
   telefono: string = '';
   estado: boolean = true;
 
+  // Estado del proceso de envío
   isSubmitting: boolean = false;
+  // Mensaje de error para alertas
   errorMessage: string | null = null;
 
+  // Propiedad computada que indica si estamos en modo edición
   get isEditing(): boolean {
     return this.userToEdit !== null;
   }
 
+  // Inyecta el servicio de autenticación y detección de cambios
   constructor(
     private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
+  // Inicializa los campos del formulario con los datos del usuario si es edición
   ngOnInit(): void {
     if (this.userToEdit) {
       this.nombre = this.userToEdit.nombre || this.userToEdit.name.split(' ')[0] || '';
@@ -200,10 +210,12 @@ export class UserFormComponent implements OnInit {
     }
   }
 
+  // Emite el evento para cerrar el modal
   onClose(): void {
     this.close.emit();
   }
 
+  // Envía el formulario para crear o actualizar el usuario
   onSubmit(): void {
     if (!this.nombre.trim() || !this.apellido.trim() || !this.correo.trim()) {
       this.errorMessage = 'Nombre, apellido y correo son campos obligatorios.';

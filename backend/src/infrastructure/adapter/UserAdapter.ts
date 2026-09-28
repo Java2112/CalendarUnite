@@ -1,16 +1,20 @@
+// Importa bcryptjs para hashear contraseñas de usuarios por defecto
 import bcrypt from 'bcryptjs';
+// Importa el puerto de usuarios del dominio
 import { UserPort } from '../../domain/UserPort';
+// Importa la entidad User del dominio
 import { User } from '../../domain/User';
+// Importa el pool de conexiones PostgreSQL
 import { pool } from '../config/database';
 
+// Adaptador de infraestructura para persistencia de usuarios en PostgreSQL
 export class UserAdapter implements UserPort {
+  // Constructor que inicializa usuarios por defecto si no existen
   constructor() {
     this.ensureInitialAdmin();
   }
 
-  /**
-   * Asegura que exista al menos un usuario administrador por defecto para iniciar sesión
-   */
+  // Siembra las cuentas iniciales de Admin, Bienestar y Líder si la tabla está vacía
   private async ensureInitialAdmin(): Promise<void> {
     try {
       const res = await pool.query('SELECT COUNT(*) as count FROM "user"');
@@ -43,6 +47,7 @@ export class UserAdapter implements UserPort {
     }
   }
 
+  // Mapea un registro de la base de datos a la entidad User
   private mapRowToUser(row: any): User {
     const fullName = `${row.name_user} ${row.subname}`.trim();
     return {
@@ -67,6 +72,7 @@ export class UserAdapter implements UserPort {
     };
   }
 
+  // Busca un usuario por correo insensible a mayúsculas
   async findByEmail(email: string): Promise<User | null> {
     const res = await pool.query(
       'SELECT * FROM "user" WHERE LOWER(email) = LOWER($1) LIMIT 1',
@@ -76,6 +82,7 @@ export class UserAdapter implements UserPort {
     return this.mapRowToUser(res.rows[0]);
   }
 
+  // Busca el primer usuario que tenga un rol determinado
   async findByRole(role: string): Promise<User | null> {
     const res = await pool.query(
       'SELECT * FROM "user" WHERE LOWER(role::text) = LOWER($1) LIMIT 1',
@@ -85,6 +92,7 @@ export class UserAdapter implements UserPort {
     return this.mapRowToUser(res.rows[0]);
   }
 
+  // Busca un usuario por su ID
   async findById(id: number | string): Promise<User | null> {
     const res = await pool.query(
       'SELECT * FROM "user" WHERE id_user = $1 LIMIT 1',
@@ -94,6 +102,7 @@ export class UserAdapter implements UserPort {
     return this.mapRowToUser(res.rows[0]);
   }
 
+  // Consulta todos los usuarios ordenados por ID
   async findAll(): Promise<User[]> {
     const res = await pool.query(
       'SELECT * FROM "user" ORDER BY id_user ASC'
@@ -101,6 +110,7 @@ export class UserAdapter implements UserPort {
     return res.rows.map((r: any) => this.mapRowToUser(r));
   }
 
+  // Inserta un nuevo usuario en la base de datos
   async create(userData: Omit<User, 'id_usuario'>): Promise<User> {
     const res = await pool.query(
       `INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
@@ -125,6 +135,7 @@ export class UserAdapter implements UserPort {
     return createdUser;
   }
 
+  // Actualiza los campos de un usuario en la base de datos
   async update(id: number, data: Partial<User>): Promise<User | null> {
     const currentUser = await this.findById(id);
     if (!currentUser) return null;
@@ -156,6 +167,7 @@ export class UserAdapter implements UserPort {
     return this.findById(id);
   }
 
+  // Cambia el estado de activación de un usuario
   async updateStatus(id: number, estado: boolean): Promise<boolean> {
     const res = await pool.query(
       'UPDATE "user" SET status = $1 WHERE id_user = $2',
@@ -164,12 +176,13 @@ export class UserAdapter implements UserPort {
     return (res.rowCount ?? 0) > 0;
   }
 
+  // Elimina un usuario protegiendo que quede al menos un Administrador
   async delete(id: number): Promise<boolean> {
     const numId = Number(id);
     const target = await this.findById(numId);
     if (!target) return false;
 
-    // Proteger al menos que quede 1 admin
+    // Protege que quede al menos 1 administrador
     if (target.rol.toLowerCase() === 'admin') {
       const res = await pool.query(
         "SELECT COUNT(*) as count FROM \"user\" WHERE LOWER(role::text) = 'admin'"

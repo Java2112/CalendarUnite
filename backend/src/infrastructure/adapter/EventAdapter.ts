@@ -1,13 +1,22 @@
+// Importa el puerto de eventos del dominio
 import { EventPort } from '../../domain/EventPort';
+// Importa las entidades del dominio de eventos
 import { Event, Attendee, EventStats } from '../../domain/Event';
+// Importa el adaptador de lugares
 import { PlaceAdapter } from './PlaceAdapter';
+// Importa el adaptador de usuarios
 import { UserAdapter } from './UserAdapter';
+// Importa el adaptador de archivos adjuntos
 import { AttachmentAdapter } from './AttachmentAdapter';
+// Importa el pool de base de datos PostgreSQL
 import { pool } from '../config/database';
 
+// Adaptador de infraestructura para persistencia y consulta de eventos en PostgreSQL
 export class EventAdapter implements EventPort {
+  // Lista en memoria de asistentes registrados
   private inMemoryAttendees: Attendee[] = [];
 
+  // Constructor que recibe adaptadores colaboradores e inicializa eventos
   constructor(
     private placeAdapter?: PlaceAdapter,
     private userAdapter?: UserAdapter,
@@ -16,6 +25,7 @@ export class EventAdapter implements EventPort {
     this.ensureInitialEvents();
   }
 
+  // Siembra eventos iniciales de ejemplo si la tabla event está vacía
   private async ensureInitialEvents(): Promise<void> {
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -98,6 +108,7 @@ export class EventAdapter implements EventPort {
     }
   }
 
+  // Parsea enlaces virtuales desde texto o JSON
   private parseLinks(linkVal: any): string[] {
     if (!linkVal) return [];
     if (Array.isArray(linkVal)) return linkVal;
@@ -109,6 +120,7 @@ export class EventAdapter implements EventPort {
     }
   }
 
+  // Mapea una fila de base de datos a la entidad Event del dominio
   private mapRowToEvent(row: any): Event {
     const startHourStr = row.start_hour ? String(row.start_hour).substring(0, 5) : '';
     const endHourStr = row.end_hour ? String(row.end_hour).substring(0, 5) : '';
@@ -141,6 +153,7 @@ export class EventAdapter implements EventPort {
     };
   }
 
+  // Enriquece el evento con la información del lugar y del usuario responsable
   private async enrichEvent(event: Event): Promise<Event> {
     const copy = { ...event };
 
@@ -169,6 +182,7 @@ export class EventAdapter implements EventPort {
     return copy;
   }
 
+  // Consulta todos los eventos con filtros opcionales de modalidad y término de búsqueda
   async findAll(modality?: string, search?: string): Promise<Event[]> {
     let sql = 'SELECT * FROM event WHERE 1=1';
     const params: any[] = [];
@@ -194,6 +208,7 @@ export class EventAdapter implements EventPort {
     return Promise.all(mapped.map(e => this.enrichEvent(e)));
   }
 
+  // Consulta un evento por su ID
   async findById(id: number | string): Promise<Event | null> {
     const cleanId = String(id).replace(/^evt-/, '');
     const res = await pool.query(
@@ -206,6 +221,7 @@ export class EventAdapter implements EventPort {
     return this.enrichEvent(event);
   }
 
+  // Inserta un nuevo evento en la tabla event
   async create(eventData: Omit<Event, 'id_evento'>, bannerUrl?: string): Promise<Event> {
     const rawModality = eventData.modalidad || 'Presencial';
     const modalityToSave = rawModality === 'Virtual' ? 'Virtual' : 'Presencial';
@@ -237,6 +253,7 @@ export class EventAdapter implements EventPort {
     return created;
   }
 
+  // Actualiza los campos de un evento existente
   async update(id: number, data: Partial<Event>, bannerUrl?: string): Promise<Event | null> {
     const existing = await this.findById(id);
     if (!existing) return null;
@@ -276,6 +293,7 @@ export class EventAdapter implements EventPort {
     return this.findById(id);
   }
 
+  // Elimina un evento por su ID
   async delete(id: number): Promise<boolean> {
     const res = await pool.query(
       'DELETE FROM event WHERE id_event = $1',
@@ -284,6 +302,7 @@ export class EventAdapter implements EventPort {
     return (res.rowCount ?? 0) > 0;
   }
 
+  // Busca si un asistente ya está inscrito en un evento
   async findAttendeeByEventAndEmail(eventId: string, email: string): Promise<Attendee | null> {
     const cleanId = eventId.replace(/^evt-/, '');
     const found = this.inMemoryAttendees.find(
@@ -292,15 +311,18 @@ export class EventAdapter implements EventPort {
     return found || null;
   }
 
+  // Guarda un nuevo asistente en la lista
   async saveAttendee(attendee: Attendee): Promise<Attendee> {
     this.inMemoryAttendees.push(attendee);
     return attendee;
   }
 
+  // Actualiza cupos disponibles
   async updateAvailableSpots(eventId: string, spots: number): Promise<void> {
-    // Extensión opcional
+    // Implementación extensible
   }
 
+  // Calcula estadísticas de conteo de eventos en PostgreSQL
   async getStats(): Promise<EventStats> {
     const totalRes = await pool.query('SELECT COUNT(*) as total FROM event');
     const presencialRes = await pool.query("SELECT COUNT(*) as total FROM event WHERE modality::text = 'Presencial'");

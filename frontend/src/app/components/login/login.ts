@@ -19,15 +19,11 @@ import { AuthService } from '../../services/auth.service';
 
         <!-- Cabecera del Modal -->
         <div class="login-header">
-          <div class="login-icon-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-              <polyline points="10 17 15 12 10 7"/>
-              <line x1="15" y1="12" x2="3" y2="12"/>
-            </svg>
+          <div class="login-logo-wrapper">
+            <img src="img/logo-cuadrado.png" alt="Uniempresarial" class="login-logo-img" />
           </div>
-          <h2 class="login-title">Acceso al Sistema</h2>
-          <p class="login-subtitle">Ingresa tus credenciales institucionales para iniciar sesión</p>
+          <h2 class="login-title">Acceso Institucional</h2>
+          <p class="login-subtitle">Ingresa con tus credenciales de Uniempresarial para gestionar bienestar y eventos</p>
         </div>
 
         <!-- Alerta de Error si falla el Login (Sin emojis, con icono SVG limpio) -->
@@ -51,7 +47,7 @@ import { AuthService } from '../../services/auth.service';
               id="email" 
               [(ngModel)]="email" 
               name="email" 
-              placeholder="ejemplo@unite.edu.co" 
+              placeholder="ejemplo@uniempresarial.edu.co" 
               required
               class="form-input" />
           </div>
@@ -142,7 +138,7 @@ import { AuthService } from '../../services/auth.service';
       background: none;
       border: none;
       font-size: 24px;
-      color: #555555;
+      color: #64748b;
       cursor: pointer;
       line-height: 1;
       padding: 4px;
@@ -150,8 +146,8 @@ import { AuthService } from '../../services/auth.service';
       transition: all 0.2s;
     }
     .close-btn:hover {
-      color: #003366;
-      background: #f1f5f9;
+      color: var(--accent-red, #dd0034);
+      background: var(--accent-red-light, #fde8ec);
     }
 
     .login-header {
@@ -159,22 +155,24 @@ import { AuthService } from '../../services/auth.service';
       margin-bottom: 24px;
     }
 
-    .login-icon-badge {
-      width: 52px;
-      height: 52px;
-      background: #e6eef5;
-      color: #003366;
-      border-radius: 14px;
-      display: inline-flex;
-      align-items: center;
+    .login-logo-wrapper {
+      display: flex;
       justify-content: center;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .login-logo-img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      border-radius: 12px;
+      filter: drop-shadow(0 4px 10px rgba(14, 31, 135, 0.15));
     }
 
     .login-title {
       font-size: 22px;
       font-weight: 700;
-      color: #003366;
+      color: var(--primary-blue, #0e1f87);
       margin: 0 0 6px 0;
     }
 
@@ -243,8 +241,8 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .toggle-password-btn:hover {
-      color: #003366;
-      background: #f1f5f9;
+      color: var(--primary-blue, #0e1f87);
+      background: var(--primary-blue-light, #eef1fc);
     }
 
     .form-input {
@@ -257,14 +255,14 @@ import { AuthService } from '../../services/auth.service';
 
     .form-input:focus {
       outline: none;
-      border-color: #003366;
-      box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.15);
+      border-color: var(--primary-blue, #0e1f87);
+      box-shadow: 0 0 0 3px rgba(14, 31, 135, 0.15);
     }
 
     .submit-btn {
       margin-top: 8px;
       padding: 12px;
-      background: #003366;
+      background: var(--primary-blue, #0e1f87);
       color: #ffffff;
       border: none;
       border-radius: 8px;
@@ -275,7 +273,7 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .submit-btn:hover {
-      background: #0A2342;
+      background: var(--primary-blue-dark, #07104a);
     }
 
     .submit-btn:disabled {
