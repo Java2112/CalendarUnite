@@ -13,6 +13,8 @@ import { PlaceAdapter } from '../adapter/PlaceAdapter';
 import { AttachmentAdapter } from '../adapter/AttachmentAdapter';
 // Importa el adaptador de eventos para PostgreSQL
 import { EventAdapter } from '../adapter/EventAdapter';
+// Importa el adaptador de recursos públicos
+import { ResourceAdapter } from '../adapter/ResourceAdapter';
 
 // Importa el caso de uso para obtener todos los eventos
 import { GetEventsUseCase } from '../../application/use-cases/events/GetEventsUseCase';
@@ -36,6 +38,8 @@ import { ToggleUserStatusUseCase } from '../../application/use-cases/users/Toggl
 
 // Importa el caso de uso para consultar lugares
 import { GetPlacesUseCase } from '../../application/use-cases/places/GetPlacesUseCase';
+// Importa el caso de uso para consultar recursos públicos
+import { GetResourcesUseCase } from '../../application/use-cases/resources/GetResourcesUseCase';
 
 // Importa el controlador HTTP de usuarios
 import { UserController } from '../controller/UserController';
@@ -43,6 +47,8 @@ import { UserController } from '../controller/UserController';
 import { EventController } from '../controller/EventController';
 // Importa el controlador HTTP de lugares
 import { PlaceController } from '../controller/PlaceController';
+// Importa el controlador HTTP de recursos públicos
+import { ResourceController } from '../controller/ResourceController';
 
 // Importa la función constructora de rutas de usuarios
 import { createUserRoutes } from '../routes/UserRoutes';
@@ -50,6 +56,8 @@ import { createUserRoutes } from '../routes/UserRoutes';
 import { createEventRoutes } from '../routes/EventRoutes';
 // Importa la función constructora de rutas de lugares
 import { createPlaceRoutes } from '../routes/PlaceRoutes';
+// Importa la función constructora de rutas de recursos públicos
+import { createResourceRoutes } from '../routes/ResourceRoutes';
 
 // Función principal que ensambla y configura la aplicación Express
 export function createApp(): Application {
@@ -72,6 +80,8 @@ export function createApp(): Application {
   const attachmentAdapter = new AttachmentAdapter();
   // Instancia el adaptador de eventos con sus dependencias
   const eventAdapter = new EventAdapter(placeAdapter, userAdapter, attachmentAdapter);
+  // Instancia el adaptador de recursos públicos
+  const resourceAdapter = new ResourceAdapter();
 
   // Instancia el caso de uso de obtención de eventos
   const getEventsUseCase = new GetEventsUseCase(eventAdapter);
@@ -95,6 +105,8 @@ export function createApp(): Application {
 
   // Instancia el caso de uso para listar lugares
   const getPlacesUseCase = new GetPlacesUseCase(placeAdapter);
+  // Instancia el caso de uso para consultar recursos públicos
+  const getResourcesUseCase = new GetResourcesUseCase(resourceAdapter);
 
   // Instancia el controlador de usuarios con sus casos de uso
   const userController = new UserController(
@@ -118,6 +130,9 @@ export function createApp(): Application {
   // Instancia el controlador de lugares con su caso de uso
   const placeController = new PlaceController(getPlacesUseCase);
 
+  // Instancia el controlador de recursos públicos con su caso de uso
+  const resourceController = new ResourceController(getResourcesUseCase);
+
   // Registra las rutas de autenticación bajo /api/auth
   app.use('/api/auth', createUserRoutes(userController));
   // Registra las rutas de gestión de usuarios bajo /api
@@ -126,6 +141,8 @@ export function createApp(): Application {
   app.use('/api', createEventRoutes(eventController));
   // Registra las rutas de catálogo de lugares bajo /api
   app.use('/api', createPlaceRoutes(placeController));
+  // Registra las rutas de recursos públicos bajo /api
+  app.use('/api', createResourceRoutes(resourceController));
 
   // Ruta de comprobación de salud del servicio backend
   app.get('/api/health', (req, res) => {

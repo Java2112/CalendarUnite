@@ -41,6 +41,15 @@ import { UserRole } from '../../models/user.model';
             <span>Cronograma Público</span>
           </button>
 
+          <button
+            class="nav-tab-btn"
+            [class.active]="currentView === 'resources'"
+            (click)="setView('resources')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Recursos Públicos</span>
+          </button>
+
           @if (authService.isLoggedIn()) {
             <button
               class="nav-tab-btn"
@@ -330,11 +339,11 @@ import { UserRole } from '../../models/user.model';
 // Componente de la barra de navegación superior institucional
 export class NavbarComponent {
   // Propiedad de entrada que indica la vista actualmente activa
-  @Input() currentView: 'calendar' | 'management' = 'calendar';
+  @Input() currentView: 'calendar' | 'resources' | 'management' = 'calendar';
   // Evento emitido para abrir el modal de inicio de sesión
   @Output() openLogin = new EventEmitter<void>();
   // Evento emitido al cambiar de vista
-  @Output() viewChange = new EventEmitter<'calendar' | 'management'>();
+  @Output() viewChange = new EventEmitter<'calendar' | 'resources' | 'management'>();
 
   // Inyecta el servicio de autenticación públicamente para su uso en plantilla
   constructor(public authService: AuthService) {}
@@ -345,7 +354,7 @@ export class NavbarComponent {
   }
 
   // Cambia la vista activa y emite el evento al componente padre
-  setView(view: 'calendar' | 'management'): void {
+  setView(view: 'calendar' | 'resources' | 'management'): void {
     this.currentView = view;
     this.viewChange.emit(view);
   }

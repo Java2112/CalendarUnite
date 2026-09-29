@@ -1,11 +1,13 @@
-// Importa el decorador Component para definir componentes en Angular
-import { Component } from '@angular/core';
+// Importa el decorador Component y OnInit para definir componentes en Angular
+import { Component, OnInit } from '@angular/core';
 // Importa CommonModule con directivas fundamentales de Angular
 import { CommonModule } from '@angular/common';
 // Importa el componente de la barra de navegación superior
 import { NavbarComponent } from './components/navbar/navbar';
 // Importa el componente del cronograma y calendario de actividades
 import { CalendarComponent } from './components/calendar/calendar';
+// Importa el componente de la vista pública de recursos para estudiantes
+import { ResourcesComponent } from './components/resources/resources';
 // Importa el componente modal de visualización detallada del evento
 import { EventDetailComponent } from './components/event-detail/event-detail';
 // Importa el componente modal para el inicio de sesión
@@ -28,6 +30,7 @@ import { AuthService } from './services/auth.service';
     CommonModule,
     NavbarComponent,
     CalendarComponent,
+    ResourcesComponent,
     UnifiedManagementComponent,
     EventDetailComponent,
     LoginComponent
@@ -38,9 +41,9 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css'
 })
 // Clase controladora principal de la aplicación
-export class App {
-  // Vista activa actual en la aplicación ('calendar' para público o 'management' para gestión)
-  activeView: 'calendar' | 'management' = 'calendar';
+export class App implements OnInit {
+  // Vista activa actual en la aplicación ('calendar', 'resources' o 'management')
+  activeView: 'calendar' | 'resources' | 'management' = 'calendar';
 
   // Año actual dinámico para el footer institucional
   readonly currentYear = new Date().getFullYear();
@@ -51,10 +54,24 @@ export class App {
   // Inyecta el servicio de autenticación accesible públicamente en la plantilla
   constructor(public authService: AuthService) {}
 
-  // Maneja el cambio de vista entre Cronograma Público y Panel de Gestión
-  onViewChange(view: 'calendar' | 'management'): void {
+  ngOnInit(): void {
+    // Sincroniza la vista con la URL del navegador si el usuario navega a /recursos
+    const path = window.location.pathname;
+    if (path.includes('recursos') || path.includes('resources')) {
+      this.activeView = 'resources';
+    } else if (path.includes('cronograma')) {
+      this.activeView = 'calendar';
+    }
+  }
+
+  // Maneja el cambio de vista entre Cronograma Público, Recursos Públicos y Panel de Gestión
+  onViewChange(view: 'calendar' | 'resources' | 'management'): void {
     // Actualiza la propiedad con la vista seleccionada
     this.activeView = view;
+    
+    // Actualiza sutilmente la ruta en la barra de direcciones del navegador
+    const newPath = view === 'resources' ? '/recursos' : (view === 'calendar' ? '/cronograma' : '/gestion');
+    window.history.pushState({}, '', newPath);
   }
 
   // Método ejecutado al seleccionar un evento en CalendarComponent
