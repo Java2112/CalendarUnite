@@ -1,6 +1,4 @@
-// Importa el modelo de lugar
 import { Place } from './place.model';
-// Importa el tipo de rol de usuario
 import { UserRole } from './user.model';
 
 // Tipo de modalidad de eventos disponible para filtros

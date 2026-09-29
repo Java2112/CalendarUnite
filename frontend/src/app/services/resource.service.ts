@@ -1,10 +1,6 @@
-// Importa decoradores y funciones de señales reactivas de Angular
 import { Injectable, signal } from '@angular/core';
-// Importa el cliente HTTP y utilidades
 import { HttpClient } from '@angular/common/http';
-// Importa operadores de RxJS para manejo de flujos asíncronos y fallback de errores
 import { Observable, of, tap, catchError } from 'rxjs';
-// Importa la interfaz del modelo de recursos
 import { ResourceItem } from '../models/resource.model';
 
 @Injectable({

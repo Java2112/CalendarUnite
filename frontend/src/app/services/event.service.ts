@@ -1,14 +1,8 @@
-// Importa decoradores y funciones de señales reactivas de Angular
 import { Injectable, signal, computed } from '@angular/core';
-// Importa el cliente HTTP y utilidades para parámetros de Angular
 import { HttpClient, HttpParams } from '@angular/common/http';
-// Importa operadores de RxJS para manejo de flujos asíncronos y errores
 import { Observable, tap, catchError, throwError } from 'rxjs';
-// Importa interfaces y tipos del modelo de eventos
 import { EventItem, RegisterAttendeeRequest, EventStats, CreateEventRequest, UpdateEventRequest } from '../models/event.model';
-// Importa el modelo de lugares
 import { Place } from '../models/place.model';
-// Importa el servicio de autenticación
 import { AuthService } from './auth.service';
 
 // Declara el servicio inyectable a nivel raíz

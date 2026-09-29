@@ -1,10 +1,6 @@
-// Importa decoradores y funciones de señales reactivas de Angular
 import { Injectable, signal, computed } from '@angular/core';
-// Importa el cliente HTTP y encabezados de Angular
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-// Importa utilidades reactivas de RxJS
 import { Observable, tap } from 'rxjs';
-// Importa los modelos y tipos relacionados con usuarios y autenticación
 import { User, UserRole, AuthResponse, LoginCredentials, CreateUserRequest, UpdateUserRequest } from '../models/user.model';
 
 // Declara el servicio disponible en toda la aplicación

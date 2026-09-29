@@ -1,22 +1,12 @@
-// Importa el decorador Component y OnInit para definir componentes en Angular
 import { Component, OnInit } from '@angular/core';
-// Importa CommonModule con directivas fundamentales de Angular
 import { CommonModule } from '@angular/common';
-// Importa el componente de la barra de navegación superior
 import { NavbarComponent } from './components/navbar/navbar';
-// Importa el componente del cronograma y calendario de actividades
 import { CalendarComponent } from './components/calendar/calendar';
-// Importa el componente de la vista pública de recursos para estudiantes
 import { ResourcesComponent } from './components/resources/resources';
-// Importa el componente modal de visualización detallada del evento
 import { EventDetailComponent } from './components/event-detail/event-detail';
-// Importa el componente modal para el inicio de sesión
 import { LoginComponent } from './components/login/login';
-// Importa el componente del panel de administración y gestión unificada
 import { UnifiedManagementComponent } from './components/unified-management/unified-management';
-// Importa la interfaz del modelo de datos de eventos
 import { EventItem } from './models/event.model';
-// Importa el servicio de autenticación y estado de sesión
 import { AuthService } from './services/auth.service';
 
 // Decorador que configura el componente raíz de la aplicación

@@ -1,10 +1,6 @@
-// Importa decoradores y utilidades de componentes de Angular
 import { Component, Output, EventEmitter, Input } from '@angular/core';
-// Importa directivas comunes de Angular
 import { CommonModule } from '@angular/common';
-// Importa el servicio de autenticación
 import { AuthService } from '../../services/auth.service';
-// Importa el tipo de rol de usuario
 import { UserRole } from '../../models/user.model';
 
 @Component({
