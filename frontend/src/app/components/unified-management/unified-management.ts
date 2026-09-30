@@ -431,7 +431,7 @@ import { ResourceItem } from '../../models/resource.model';
           <div style="background:var(--primary-blue-light); border:1.5px solid var(--primary-blue-border); padding:16px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <h3 style="color:var(--primary-blue); margin:0 0 4px 0; font-size:16px; font-weight:800;">
-                Módulo de Almacenamiento Local de Documentos Institucionales
+                Módulo de Almacenamiento de Documentos Institucionales
               </h3>
               <p style="margin:0; font-size:13px; color:var(--text-muted);">
                 Los archivos que subas se guardan físicamente en el backend y se publican automáticamente en la pantalla de Recursos de acceso estudiantil.
@@ -439,7 +439,7 @@ import { ResourceItem } from '../../models/resource.model';
             </div>
             <button class="btn-cu-primary" (click)="openUploadModal()" style="padding:8px 16px; font-size:14px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span>Subir Archivo Local</span>
+              <span>Subir Archivo</span>
             </button>
           </div>
 
