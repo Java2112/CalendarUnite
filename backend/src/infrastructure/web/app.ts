@@ -36,10 +36,13 @@ import { UpdateUserUseCase } from '../../application/use-cases/users/UpdateUserU
 // Importa el caso de uso para cambiar estado de usuario
 import { ToggleUserStatusUseCase } from '../../application/use-cases/users/ToggleUserStatusUseCase';
 
+import path from 'path';
 // Importa el caso de uso para consultar lugares
 import { GetPlacesUseCase } from '../../application/use-cases/places/GetPlacesUseCase';
 // Importa el caso de uso para consultar recursos públicos
 import { GetResourcesUseCase } from '../../application/use-cases/resources/GetResourcesUseCase';
+// Importa el caso de uso para crear recursos públicos
+import { CreateResourceUseCase } from '../../application/use-cases/resources/CreateResourceUseCase';
 
 // Importa el controlador HTTP de usuarios
 import { UserController } from '../controller/UserController';
@@ -71,6 +74,9 @@ export function createApp(): Application {
   }));
   // Configura el parser para interpretar cuerpos de petición en formato JSON
   app.use(express.json());
+
+  // Sirve la carpeta de archivos subidos localmente de forma estática
+  app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
   // Instancia el adaptador de persistencia de usuarios
   const userAdapter = new UserAdapter();
@@ -107,6 +113,8 @@ export function createApp(): Application {
   const getPlacesUseCase = new GetPlacesUseCase(placeAdapter);
   // Instancia el caso de uso para consultar recursos públicos
   const getResourcesUseCase = new GetResourcesUseCase(resourceAdapter);
+  // Instancia el caso de uso para crear y subir recursos públicos
+  const createResourceUseCase = new CreateResourceUseCase(resourceAdapter);
 
   // Instancia el controlador de usuarios con sus casos de uso
   const userController = new UserController(
@@ -130,8 +138,8 @@ export function createApp(): Application {
   // Instancia el controlador de lugares con su caso de uso
   const placeController = new PlaceController(getPlacesUseCase);
 
-  // Instancia el controlador de recursos públicos con su caso de uso
-  const resourceController = new ResourceController(getResourcesUseCase);
+  // Instancia el controlador de recursos públicos con sus casos de uso
+  const resourceController = new ResourceController(getResourcesUseCase, createResourceUseCase);
 
   // Registra las rutas de autenticación bajo /api/auth
   app.use('/api/auth', createUserRoutes(userController));

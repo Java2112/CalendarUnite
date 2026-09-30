@@ -1,18 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventAdapter = void 0;
+// Importa el pool de base de datos PostgreSQL
 const database_1 = require("../config/database");
+// Adaptador de infraestructura para persistencia y consulta de eventos en PostgreSQL
 class EventAdapter {
     placeAdapter;
     userAdapter;
     attachmentAdapter;
+    // Lista en memoria de asistentes registrados
     inMemoryAttendees = [];
+    // Constructor que recibe adaptadores colaboradores e inicializa eventos
     constructor(placeAdapter, userAdapter, attachmentAdapter) {
         this.placeAdapter = placeAdapter;
         this.userAdapter = userAdapter;
         this.attachmentAdapter = attachmentAdapter;
         this.ensureInitialEvents();
     }
+    // Siembra eventos iniciales de ejemplo si la tabla event está vacía
     async ensureInitialEvents() {
         try {
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -88,6 +93,7 @@ class EventAdapter {
             console.warn('[EventAdapter] Advertencia al verificar/sembrar eventos en PostgreSQL:', err.message);
         }
     }
+    // Parsea enlaces virtuales desde texto o JSON
     parseLinks(linkVal) {
         if (!linkVal)
             return [];
@@ -101,6 +107,7 @@ class EventAdapter {
             return [String(linkVal)];
         }
     }
+    // Mapea una fila de base de datos a la entidad Event del dominio
     mapRowToEvent(row) {
         const startHourStr = row.start_hour ? String(row.start_hour).substring(0, 5) : '';
         const endHourStr = row.end_hour ? String(row.end_hour).substring(0, 5) : '';
@@ -131,6 +138,7 @@ class EventAdapter {
             banner_url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80'
         };
     }
+    // Enriquece el evento con la información del lugar y del usuario responsable
     async enrichEvent(event) {
         const copy = { ...event };
         if (this.placeAdapter && copy.id_lugar) {
@@ -155,6 +163,7 @@ class EventAdapter {
         }
         return copy;
     }
+    // Consulta todos los eventos con filtros opcionales de modalidad y término de búsqueda
     async findAll(modality, search) {
         let sql = 'SELECT * FROM event WHERE 1=1';
         const params = [];
@@ -175,6 +184,7 @@ class EventAdapter {
         const mapped = res.rows.map((r) => this.mapRowToEvent(r));
         return Promise.all(mapped.map(e => this.enrichEvent(e)));
     }
+    // Consulta un evento por su ID
     async findById(id) {
         const cleanId = String(id).replace(/^evt-/, '');
         const res = await database_1.pool.query('SELECT * FROM event WHERE id_event = $1 LIMIT 1', [Number(cleanId)]);
@@ -183,6 +193,7 @@ class EventAdapter {
         const event = this.mapRowToEvent(res.rows[0]);
         return this.enrichEvent(event);
     }
+    // Inserta un nuevo evento en la tabla event
     async create(eventData, bannerUrl) {
         const rawModality = eventData.modalidad || 'Presencial';
         const modalityToSave = rawModality === 'Virtual' ? 'Virtual' : 'Presencial';
@@ -208,6 +219,7 @@ class EventAdapter {
         }
         return created;
     }
+    // Actualiza los campos de un evento existente
     async update(id, data, bannerUrl) {
         const existing = await this.findById(id);
         if (!existing)
@@ -241,22 +253,27 @@ class EventAdapter {
         ]);
         return this.findById(id);
     }
+    // Elimina un evento por su ID
     async delete(id) {
         const res = await database_1.pool.query('DELETE FROM event WHERE id_event = $1', [Number(id)]);
         return (res.rowCount ?? 0) > 0;
     }
+    // Busca si un asistente ya está inscrito en un evento
     async findAttendeeByEventAndEmail(eventId, email) {
         const cleanId = eventId.replace(/^evt-/, '');
         const found = this.inMemoryAttendees.find(a => (a.eventId === eventId || a.eventId === cleanId) && a.correo.toLowerCase() === email.toLowerCase());
         return found || null;
     }
+    // Guarda un nuevo asistente en la lista
     async saveAttendee(attendee) {
         this.inMemoryAttendees.push(attendee);
         return attendee;
     }
+    // Actualiza cupos disponibles
     async updateAvailableSpots(eventId, spots) {
-        // Extensión opcional
+        // Implementación extensible
     }
+    // Calcula estadísticas de conteo de eventos en PostgreSQL
     async getStats() {
         const totalRes = await database_1.pool.query('SELECT COUNT(*) as total FROM event');
         const presencialRes = await database_1.pool.query("SELECT COUNT(*) as total FROM event WHERE modality::text = 'Presencial'");

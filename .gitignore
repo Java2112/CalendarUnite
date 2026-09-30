@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+**/dist/
+
+# Environment files
+.env
+**/.env
+
+# Local uploads
+backend/uploads/*
+!backend/uploads/reglamento-estudiantil-2026.pdf
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db

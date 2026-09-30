@@ -8,6 +8,8 @@ import { Place } from '../../models/place.model';
 import { User } from '../../models/user.model';
 import { EventFormComponent } from '../event-form/event-form';
 import { UserFormComponent } from '../user-form/user-form';
+import { ResourceService } from '../../services/resource.service';
+import { ResourceItem } from '../../models/resource.model';
 
 @Component({
   selector: 'app-unified-management',
@@ -41,6 +43,11 @@ import { UserFormComponent } from '../user-form/user-form';
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>Nuevo Usuario</span>
             </button>
+          } @else if (activeTab === 'resources') {
+            <button class="btn-cu-primary" (click)="openUploadModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Subir Archivo (PDF / Imagen)</span>
+            </button>
           }
         </div>
       </div>
@@ -65,6 +72,17 @@ import { UserFormComponent } from '../user-form/user-form';
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>Catálogo de Lugares (Campus)</span>
           <span class="badge-pill">{{ places().length }}</span>
+        </button>
+
+        <!-- Pestaña de Recursos y Archivos para Admin, Bienestar y Líderes -->
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'resources'"
+          (click)="activeTab = 'resources'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Recursos y Archivos</span>
+          <span class="badge-pill">{{ resourceService.resources().length }}</span>
         </button>
 
         @if (isAdmin()) {
@@ -404,6 +422,108 @@ import { UserFormComponent } from '../user-form/user-form';
         </div>
       }
 
+      <!-- ==================================================================== -->
+      <!-- PESTAÑA: GESTIÓN DE RECURSOS Y ARCHIVOS (LOCALES)                    -->
+      <!-- ==================================================================== -->
+      @if (activeTab === 'resources') {
+        <div class="tab-content-area">
+          
+          <div style="background:var(--primary-blue-light); border:1.5px solid var(--primary-blue-border); padding:16px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+              <h3 style="color:var(--primary-blue); margin:0 0 4px 0; font-size:16px; font-weight:800;">
+                Módulo de Almacenamiento Local de Documentos Institucionales
+              </h3>
+              <p style="margin:0; font-size:13px; color:var(--text-muted);">
+                Los archivos que subas se guardan físicamente en el backend y se publican automáticamente en la pantalla de Recursos de acceso estudiantil.
+              </p>
+            </div>
+            <button class="btn-cu-primary" (click)="openUploadModal()" style="padding:8px 16px; font-size:14px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Subir Archivo Local</span>
+            </button>
+          </div>
+
+          <!-- Filtros de recursos -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input
+                type="text"
+                [(ngModel)]="searchResourceQuery"
+                placeholder="Buscar por título, categoría o autor..."
+                class="form-input"
+                style="padding:8px 14px; border:1.5px solid var(--border-color); border-radius:6px; font-size:14px; min-width:280px;"
+              />
+            </div>
+            <div style="font-size:13px; color:var(--text-muted);">
+              Total archivos: <strong>{{ filteredResources.length }}</strong>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="cu-table">
+              <thead>
+                <tr>
+                  <th>Formato</th>
+                  <th>Título y Descripción</th>
+                  <th>Categoría</th>
+                  <th>Subido Por</th>
+                  <th>Tamaño / Fecha</th>
+                  <th style="text-align:right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (res of filteredResources; track res.id) {
+                  <tr>
+                    <td>
+                      <span class="role-badge" [ngClass]="res.fileType === 'pdf' ? 'admin' : (res.fileType === 'image' ? 'bienestar' : 'lider')">
+                        {{ res.fileType.toUpperCase() }}
+                      </span>
+                    </td>
+                    <td style="max-width:320px;">
+                      <strong style="color:var(--primary-blue); display:block; font-size:14px;">{{ res.title }}</strong>
+                      <span style="font-size:12px; color:var(--text-muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                        {{ res.description }}
+                      </span>
+                    </td>
+                    <td>
+                      <span style="font-size:12px; font-weight:700; color:var(--text-dark); background:#f1f5f9; padding:3px 8px; border-radius:12px;">
+                        {{ res.category }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="role-badge" [ngClass]="res.uploadedByRole.toLowerCase()">
+                        {{ res.uploadedByRole }}
+                      </span>
+                      <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:3px;">
+                        {{ res.uploaderName || 'Autor institucional' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span style="font-size:13px; font-weight:600; color:var(--text-dark); display:block;">{{ res.size }}</span>
+                      <span style="font-size:11px; color:var(--text-muted);">{{ res.date }}</span>
+                    </td>
+                    <td style="text-align:right;">
+                      <div class="table-actions" style="justify-content:flex-end;">
+                        <a
+                          [href]="res.fileUrl"
+                          target="_blank"
+                          class="btn-cu-outline"
+                          style="padding:6px 12px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"
+                          title="Abrir archivo real local"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          <span>Ver</span>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
     </div>
 
     <!-- Modales de Creación y Edición -->
@@ -422,12 +542,151 @@ import { UserFormComponent } from '../user-form/user-form';
         (saved)="onUserSaved($event)"
       ></app-user-form>
     }
+
+    <!-- Modal de Subida de Archivos y Recursos Locales -->
+    @if (isUploadModalOpen) {
+      <div class="modal-backdrop" (click)="closeUploadModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()" style="max-width:580px; width:92%; background:white; border-radius:16px; padding:24px; box-shadow:var(--shadow-lg); border:1.5px solid var(--primary-blue);">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px solid var(--border-color); padding-bottom:12px;">
+            <div>
+              <h2 style="font-size:1.25rem; font-weight:800; color:var(--primary-blue); margin:0;">
+                Subir Archivo Local / Recurso
+              </h2>
+              <span style="font-size:12px; color:var(--text-muted);">
+                Se guardará físicamente en la carpeta local del backend y estará visible en la pantalla inicial de Recursos.
+              </span>
+            </div>
+            <button (click)="closeUploadModal()" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:20px; font-weight:700;">✕</button>
+          </div>
+
+          <form (ngSubmit)="submitUploadResource()" style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- Selector de Archivo -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Seleccionar Archivo (PDF, Imagen o Documento) *
+              </label>
+              <input
+                type="file"
+                (change)="onFileSelected($event)"
+                accept=".pdf,image/*,.doc,.docx,.xls,.xlsx"
+                style="display:block; width:100%; padding:10px; border:1.5px dashed var(--primary-blue-border); border-radius:8px; background:var(--primary-blue-light); cursor:pointer; font-size:13px;"
+                required
+              />
+              @if (selectedUploadFile) {
+                <div style="margin-top:6px; font-size:12px; color:var(--primary-blue); font-weight:600;">
+                  Archivo seleccionado: {{ selectedUploadFile.name }} ({{ (selectedUploadFile.size / 1024 / 1024).toFixed(2) }} MB)
+                </div>
+              }
+            </div>
+
+            <!-- Título -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Título del Recurso *
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="newResourceTitle"
+                name="title"
+                placeholder="Ej: Reglamento Institucional de Bienestar 2026"
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px;"
+                required
+              />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <!-- Categoría -->
+              <div>
+                <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                  Categoría
+                </label>
+                <select
+                  [(ngModel)]="newResourceCategory"
+                  name="category"
+                  class="form-input"
+                  style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; background:white;"
+                >
+                  <option value="Reglamento / PDF">Reglamento / PDF</option>
+                  <option value="Guía / PDF">Guía / PDF</option>
+                  <option value="Infografía / Imagen">Infografía / Imagen</option>
+                  <option value="Documento Académico">Documento Académico</option>
+                  <option value="Folleto / Imagen">Folleto / Imagen</option>
+                  <option value="Formato / Trámite">Formato / Trámite</option>
+                </select>
+              </div>
+
+              <!-- Rol Publicador -->
+              <div>
+                <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                  Rol que Publica
+                </label>
+                <select
+                  [(ngModel)]="newResourceRole"
+                  name="role"
+                  class="form-input"
+                  style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; background:white;"
+                >
+                  <option value="Bienestar">Bienestar</option>
+                  <option value="Lider">Líder Estudiantil</option>
+                  <option value="Admin">Administrador</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Descripción del Contenido
+              </label>
+              <textarea
+                [(ngModel)]="newResourceDescription"
+                name="description"
+                rows="3"
+                placeholder="Breve explicación sobre el documento o guía para los estudiantes..."
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; resize:vertical;"
+              ></textarea>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+              <button
+                type="button"
+                (click)="closeUploadModal()"
+                class="btn-cu-outline"
+                style="padding:10px 18px; font-size:14px;"
+                [disabled]="isUploading"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn-cu-primary"
+                style="padding:10px 20px; font-size:14px;"
+                [disabled]="isUploading || !selectedUploadFile || !newResourceTitle.trim()"
+              >
+                @if (isUploading) {
+                  <span>Subiendo archivo...</span>
+                } @else {
+                  <span>Subir y Publicar</span>
+                }
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    }
   `
 })
 // Componente del panel de gestión unificada para eventos, usuarios y lugares
 export class UnifiedManagementComponent implements OnInit {
-  // Pestaña activa ('events', 'places' o 'users')
-  activeTab: 'events' | 'places' | 'users' = 'events';
+  // Pestaña activa ('events', 'places', 'users' o 'resources')
+  activeTab: 'events' | 'places' | 'users' | 'resources' = 'events';
 
   // Filtros de eventos
   searchEventQuery: string = '';
@@ -435,6 +694,16 @@ export class UnifiedManagementComponent implements OnInit {
 
   // Filtros de usuarios
   searchUserQuery: string = '';
+
+  // Filtro y datos para gestión de recursos locales
+  searchResourceQuery: string = '';
+  isUploadModalOpen: boolean = false;
+  isUploading: boolean = false;
+  selectedUploadFile: File | null = null;
+  newResourceTitle: string = '';
+  newResourceCategory: string = 'Reglamento / PDF';
+  newResourceDescription: string = '';
+  newResourceRole: 'Bienestar' | 'Lider' | 'Admin' = 'Bienestar';
 
   // Datos reactivos para lugares y usuarios
   places = signal<Place[]>([]);
@@ -455,6 +724,7 @@ export class UnifiedManagementComponent implements OnInit {
   constructor(
     public eventService: EventService,
     public authService: AuthService,
+    public resourceService: ResourceService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -465,6 +735,7 @@ export class UnifiedManagementComponent implements OnInit {
 
   refreshAll(): void {
     this.eventService.loadEvents().subscribe();
+    this.resourceService.loadResources().subscribe();
     this.eventService.loadPlaces().subscribe({
       next: (data) => this.places.set(data)
     });
@@ -627,6 +898,97 @@ export class UnifiedManagementComponent implements OnInit {
         }
       });
     }
+  }
+
+  get filteredResources(): ResourceItem[] {
+    const list = this.resourceService.resources();
+    if (!this.searchResourceQuery.trim()) {
+      return list;
+    }
+    const q = this.searchResourceQuery.toLowerCase().trim();
+    return list.filter(r =>
+      r.title.toLowerCase().includes(q) ||
+      r.category.toLowerCase().includes(q) ||
+      r.uploadedByRole.toLowerCase().includes(q) ||
+      (r.uploaderName && r.uploaderName.toLowerCase().includes(q))
+    );
+  }
+
+  // -------------------------
+  // GESTIÓN DE RECURSOS / ARCHIVOS (LOCALES)
+  // -------------------------
+  openUploadModal(): void {
+    this.selectedUploadFile = null;
+    this.newResourceTitle = '';
+    this.newResourceCategory = 'Reglamento / PDF';
+    this.newResourceDescription = '';
+    
+    // Autoselecciona el rol del usuario conectado (Bienestar, Lider, Admin)
+    const current = this.authService.currentUser();
+    const role = (current?.role || current?.rol || 'Bienestar') as 'Bienestar' | 'Lider' | 'Admin';
+    if (['Bienestar', 'Lider', 'Admin'].includes(role)) {
+      this.newResourceRole = role;
+    } else {
+      this.newResourceRole = 'Bienestar';
+    }
+
+    this.isUploadModalOpen = true;
+  }
+
+  closeUploadModal(): void {
+    this.isUploadModalOpen = false;
+    this.selectedUploadFile = null;
+    this.isUploading = false;
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target?.files?.[0];
+    if (file) {
+      this.selectedUploadFile = file;
+      if (!this.newResourceTitle) {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        this.newResourceTitle = nameWithoutExt.replace(/[-_]/g, ' ');
+      }
+    }
+  }
+
+  submitUploadResource(): void {
+    if (!this.selectedUploadFile) {
+      this.showError('Por favor selecciona un archivo para subir.');
+      return;
+    }
+    if (!this.newResourceTitle.trim()) {
+      this.showError('El título del recurso es obligatorio.');
+      return;
+    }
+
+    this.isUploading = true;
+    const formData = new FormData();
+    formData.append('file', this.selectedUploadFile);
+    formData.append('title', this.newResourceTitle.trim());
+    formData.append('category', this.newResourceCategory);
+    formData.append('description', this.newResourceDescription.trim());
+    formData.append('uploadedByRole', this.newResourceRole);
+
+    const currentUser = this.authService.currentUser();
+    const uploaderName = currentUser?.nombre 
+      ? `${currentUser.nombre} ${currentUser.apellido || ''}`.trim() 
+      : (currentUser?.name || `Rol: ${this.newResourceRole}`);
+    formData.append('uploaderName', uploaderName);
+
+    this.resourceService.uploadResource(formData).subscribe({
+      next: (savedResource) => {
+        this.isUploading = false;
+        this.closeUploadModal();
+        this.showSuccess(`¡Archivo "${savedResource.title}" subido y guardado exitosamente en el servidor!`);
+        this.resourceService.loadResources().subscribe();
+      },
+      error: (err) => {
+        this.isUploading = false;
+        console.error('Error al subir recurso:', err);
+        this.showError(err.error?.error || 'Error al conectar con el servidor para subir el archivo.');
+      }
+    });
   }
 
   private showSuccess(msg: string): void {

@@ -7,4 +7,6 @@ export interface ResourcePort {
   findAll(): Promise<Resource[]>;
   // Consulta un recurso específico por su identificador único
   findById(id: string | number): Promise<Resource | null>;
+  // Guarda un nuevo recurso público
+  save(resource: Resource): Promise<Resource>;
 }

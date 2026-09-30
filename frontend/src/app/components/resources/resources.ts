@@ -142,9 +142,11 @@ import { ResourceItem, FileType } from '../../models/resource.model';
                   </svg>
                   {{ resource.uploadedByRole }}
                 </span>
-                <span class="uploader-name" *if="resource.uploaderName">
-                  {{ resource.uploaderName }}
-                </span>
+                @if (resource.uploaderName) {
+                  <span class="uploader-name">
+                    {{ resource.uploaderName }}
+                  </span>
+                }
               </div>
 
               <button class="view-btn-cta">
@@ -224,12 +226,16 @@ import { ResourceItem, FileType } from '../../models/resource.model';
               <div class="protection-overlay" (contextmenu)="$event.preventDefault()"></div>
 
               @if (selectedResource.fileType === 'pdf') {
-                <iframe 
-                  [src]="sanitizedUrl" 
-                  class="embedded-iframe protected-media" 
-                  frameborder="0"
-                  (contextmenu)="$event.preventDefault()">
-                </iframe>
+                <object 
+                  [data]="sanitizedUrl" 
+                  type="application/pdf"
+                  class="embedded-iframe protected-media">
+                  <iframe 
+                    [src]="sanitizedUrl" 
+                    class="embedded-iframe protected-media" 
+                    frameborder="0">
+                  </iframe>
+                </object>
               } @else if (selectedResource.fileType === 'image') {
                 <div class="image-viewer-box">
                   <img 

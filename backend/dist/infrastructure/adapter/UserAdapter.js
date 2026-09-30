@@ -4,15 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserAdapter = void 0;
+// Importa bcryptjs para hashear contraseñas de usuarios por defecto
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+// Importa el pool de conexiones PostgreSQL
 const database_1 = require("../config/database");
+// Adaptador de infraestructura para persistencia de usuarios en PostgreSQL
 class UserAdapter {
+    // Constructor que inicializa usuarios por defecto si no existen
     constructor() {
         this.ensureInitialAdmin();
     }
-    /**
-     * Asegura que exista al menos un usuario administrador por defecto para iniciar sesión
-     */
+    // Siembra las cuentas iniciales de Admin, Bienestar y Líder si la tabla está vacía
     async ensureInitialAdmin() {
         try {
             const res = await database_1.pool.query('SELECT COUNT(*) as count FROM "user"');
@@ -34,6 +36,7 @@ class UserAdapter {
             console.warn('[UserAdapter] Advertencia al verificar/sembrar usuarios en Postgres:', err.message);
         }
     }
+    // Mapea un registro de la base de datos a la entidad User
     mapRowToUser(row) {
         const fullName = `${row.name_user} ${row.subname}`.trim();
         return {
@@ -56,28 +59,33 @@ class UserAdapter {
                     : 'Líder Estudiantil Interfacultades'
         };
     }
+    // Busca un usuario por correo insensible a mayúsculas
     async findByEmail(email) {
         const res = await database_1.pool.query('SELECT * FROM "user" WHERE LOWER(email) = LOWER($1) LIMIT 1', [email]);
         if (!res.rows || res.rows.length === 0)
             return null;
         return this.mapRowToUser(res.rows[0]);
     }
+    // Busca el primer usuario que tenga un rol determinado
     async findByRole(role) {
         const res = await database_1.pool.query('SELECT * FROM "user" WHERE LOWER(role::text) = LOWER($1) LIMIT 1', [role]);
         if (!res.rows || res.rows.length === 0)
             return null;
         return this.mapRowToUser(res.rows[0]);
     }
+    // Busca un usuario por su ID
     async findById(id) {
         const res = await database_1.pool.query('SELECT * FROM "user" WHERE id_user = $1 LIMIT 1', [Number(id)]);
         if (!res.rows || res.rows.length === 0)
             return null;
         return this.mapRowToUser(res.rows[0]);
     }
+    // Consulta todos los usuarios ordenados por ID
     async findAll() {
         const res = await database_1.pool.query('SELECT * FROM "user" ORDER BY id_user ASC');
         return res.rows.map((r) => this.mapRowToUser(r));
     }
+    // Inserta un nuevo usuario en la base de datos
     async create(userData) {
         const res = await database_1.pool.query(`INSERT INTO "user" (name_user, subname, email, password_hash, status, phone_number, role)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -97,6 +105,7 @@ class UserAdapter {
         }
         return createdUser;
     }
+    // Actualiza los campos de un usuario en la base de datos
     async update(id, data) {
         const currentUser = await this.findById(id);
         if (!currentUser)
@@ -122,16 +131,18 @@ class UserAdapter {
         ]);
         return this.findById(id);
     }
+    // Cambia el estado de activación de un usuario
     async updateStatus(id, estado) {
         const res = await database_1.pool.query('UPDATE "user" SET status = $1 WHERE id_user = $2', [estado, Number(id)]);
         return (res.rowCount ?? 0) > 0;
     }
+    // Elimina un usuario protegiendo que quede al menos un Administrador
     async delete(id) {
         const numId = Number(id);
         const target = await this.findById(numId);
         if (!target)
             return false;
-        // Proteger al menos que quede 1 admin
+        // Protege que quede al menos 1 administrador
         if (target.rol.toLowerCase() === 'admin') {
             const res = await database_1.pool.query("SELECT COUNT(*) as count FROM \"user\" WHERE LOWER(role::text) = 'admin'");
             const adminCount = parseInt(res.rows[0]?.count || '0', 10);

@@ -1,0 +1,12 @@
+# Dependencias
+node_modules/
+
+# Compilados de TypeScript
+dist/
+
+# Archivos de entorno y credenciales
+.env
+
+# Archivos subidos localmente (manteniendo el archivo de prueba)
+uploads/*
+!uploads/reglamento-estudiantil-2026.pdf
