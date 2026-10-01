@@ -1,0 +1,192 @@
+.modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 35, 66, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .login-modal {
+      background: #ffffff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      position: relative;
+      animation: slideUp 0.25s ease-out;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #64748b;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .close-btn:hover {
+      color: var(--accent-red, #dd0034);
+      background: var(--accent-red-light, #fde8ec);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-logo-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .login-logo-img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      border-radius: 12px;
+      filter: drop-shadow(0 4px 10px rgba(14, 31, 135, 0.15));
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary-blue, #0e1f87);
+      margin: 0 0 6px 0;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: #555555;
+      margin: 0;
+    }
+
+    .error-banner {
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333333;
+    }
+
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .password-input-wrapper .form-input {
+      width: 100%;
+      padding-right: 42px;
+    }
+
+    .toggle-password-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .toggle-password-btn:hover {
+      color: var(--primary-blue, #0e1f87);
+      background: var(--primary-blue-light, #eef1fc);
+    }
+
+    .form-input {
+      padding: 10px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-blue, #0e1f87);
+      box-shadow: 0 0 0 3px rgba(14, 31, 135, 0.15);
+    }
+
+    .submit-btn {
+      margin-top: 8px;
+      padding: 12px;
+      background: var(--primary-blue, #0e1f87);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover {
+      background: var(--primary-blue-dark, #07104a);
+    }
+
+    .submit-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .login-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }

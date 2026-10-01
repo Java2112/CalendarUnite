@@ -1,0 +1,322 @@
+/* ESTILOS ESPECÍFICOS PARA EL MÓDULO DE RECURSOS PÚBLICOS */
+    
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .resource-card.ion-card {
+      background: #ffffff;
+      border: 1.5px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .resource-card.ion-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary-blue);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-top-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.85rem;
+    }
+
+    .file-icon-wrapper {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-blue-light);
+      color: var(--primary-blue);
+    }
+
+    .file-icon-wrapper.icon-pdf {
+      background: var(--accent-red-light);
+      color: var(--accent-red);
+    }
+
+    .file-icon-wrapper.icon-image {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .file-icon-wrapper.icon-doc {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .resource-category-badge.ion-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: var(--primary-blue);
+      border: 1px solid var(--primary-blue-border);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .card-main-content {
+      margin-bottom: 1.25rem;
+      flex: 1;
+    }
+
+    .resource-title.ion-card-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+
+    .resource-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-author-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 0.85rem;
+      border-top: 1px solid #f1f5f9;
+      gap: 0.5rem;
+    }
+
+    .author-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .uploader-role-tag {
+      font-size: 0.775rem;
+      font-weight: 700;
+      color: var(--primary-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .uploader-name {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+    }
+
+    .view-btn-cta {
+      background: var(--primary-blue);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .view-btn-cta:hover {
+      background: var(--primary-blue-dark);
+    }
+
+    /* ESTILOS DEL MODAL DE VISUALIZACIÓN PROTEGIDA (ION-MODAL) */
+
+    .resource-viewer-modal.ion-modal {
+      max-width: 900px;
+      width: 92%;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid var(--primary-blue);
+      box-shadow: 0 25px 50px -12px rgba(14, 31, 135, 0.35);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .viewer-modal-header {
+      padding: 1.25rem 1.5rem;
+      background: #ffffff;
+      border-bottom: 1.5px solid var(--border-color);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .role-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-red);
+      background: var(--accent-red-light);
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+    }
+
+    .modal-resource-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      line-height: 1.3;
+      margin: 0;
+    }
+
+    .btn-close-modal {
+      background: var(--accent-red-light);
+      color: var(--accent-red);
+      border: 1.5px solid var(--accent-red-border);
+      padding: 0.45rem 0.95rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-close-modal:hover {
+      background: var(--accent-red);
+      color: white;
+    }
+
+    .protection-notice-bar {
+      background: #fff7ed;
+      border-bottom: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 0.785rem;
+      font-weight: 600;
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* CONTENEDOR DEL VISOR EMBEDIDO CON REGLAS DE PROTECCIÓN DE DESCARGA */
+    .viewer-container.protected-viewer {
+      position: relative;
+      flex: 1;
+      min-height: 480px;
+      max-height: 65vh;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* OVERLAY TRANSPARENTE QUE PREVIENE CLIC DERECHO Y ARRASTRE */
+    .protection-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .embedded-iframe.protected-media {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      border: none;
+      user-select: none;
+      pointer-events: auto;
+    }
+
+    .image-viewer-box {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow: auto;
+    }
+
+    .protected-img.protected-media {
+      max-width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: auto;
+    }
+
+    .viewer-modal-footer {
+      padding: 0.85rem 1.5rem;
+      background: #ffffff;
+      border-top: 1.5px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .resource-file-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .btn-close-footer {
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .btn-close-footer:hover {
+      background: var(--primary-blue-dark);
+    }

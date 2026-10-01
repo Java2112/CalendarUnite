@@ -1,0 +1,158 @@
+/* ==========================================================================
+   ESTILOS DE LA VISTA PRINCIPAL Y FOOTER (APP COMPONENT)
+   ========================================================================== */
+
+.main-content {
+  min-height: calc(100vh - 200px);
+}
+
+/* ==========================================================================
+   FOOTER INSTITUCIONAL - UNIEMPRESARIAL & CÁMARA DE COMERCIO DE BOGOTÁ
+   ========================================================================== */
+.app-footer {
+  background-color: var(--primary-blue-dark);
+  color: #ffffff;
+  padding: 48px 24px 0 24px;
+  margin-top: 60px;
+  border-top: 4px solid var(--accent-red);
+}
+
+.app-footer .footer-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.3fr 2fr;
+  gap: 40px;
+  padding-bottom: 36px;
+}
+
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-logo-wrapper {
+  background: #ffffff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  display: inline-block;
+  width: fit-content;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.footer-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+
+.footer-institution {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.footer-affiliation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fca5a5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dot-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+  flex-shrink: 0;
+}
+
+.footer-snies {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.footer-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+.footer-col h4 {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.footer-col h4::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 24px;
+  height: 2px;
+  background-color: var(--accent-red);
+  border-radius: 2px;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-col li {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.footer-col li strong {
+  color: #ffffff;
+}
+
+.footer-bottom-bar {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 16px 0;
+}
+
+.footer-bottom-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.footer-dual-tag {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .app-footer .footer-container {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}

@@ -1,0 +1,258 @@
+<div class="dashboard-container">
+      
+      <!-- HERO BANNER INSTITUCIONAL DE RECURSOS -->
+      <section class="hero-banner">
+        <div class="hero-content">
+          <span class="hero-badge">Portal de Acceso Libre • Estudiantes</span>
+          <h1>Biblioteca Institucional de Recursos Educativos</h1>
+          <p>
+            Consulta material de apoyo, reglamentos, infografías de salud mental, guías de investigación y formatos académicos compartidos por docentes y coordinadores de Uniempresarial.
+          </p>
+
+          <!-- Estadísticas Rápidas de Recursos -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-num">{{ resourcesList.length }}</span>
+              <span class="stat-label">Recursos Disponibles</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num">{{ pdfCount }}</span>
+              <span class="stat-label">Documentos PDF</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num">{{ imageCount }}</span>
+              <span class="stat-label">Infografías e Imágenes</span>
+            </div>
+            <div class="stat-card accent">
+              <span class="stat-num">100%</span>
+              <span class="stat-label">Acceso Libre Estudiantil</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+      <div class="controls-bar">
+        <div class="search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery" 
+            placeholder="Buscar recurso por título, categoría o docente..." />
+        </div>
+
+        <!-- Filtros por tipo de formato -->
+        <div class="modality-filters">
+          <button 
+            [class.active]="selectedType === 'all'" 
+            (click)="selectedType = 'all'" 
+            class="chip-button">
+            Todos los formatos
+          </button>
+          <button 
+            [class.active]="selectedType === 'pdf'" 
+            (click)="selectedType = 'pdf'" 
+            class="chip-button">
+            PDFs
+          </button>
+          <button 
+            [class.active]="selectedType === 'image'" 
+            (click)="selectedType = 'image'" 
+            class="chip-button">
+            Imágenes / Infografías
+          </button>
+          <button 
+            [class.active]="selectedType === 'doc'" 
+            (click)="selectedType = 'doc'" 
+            class="chip-button">
+            Documentos / Guías
+          </button>
+        </div>
+      </div>
+
+      <!-- GRID / LISTA RESPONSIVA DE BANNERS DE RECURSOS (ESTILOS ION-CARD / ION-ITEM) -->
+      <div class="resources-grid">
+        @for (resource of filteredResources; track resource.id) {
+          <div 
+            class="resource-card ion-card" 
+            (click)="openResourceModal(resource)"
+            title="Haga clic para previsualizar este recurso">
+            
+            <!-- Encabezado de la tarjeta con icono de formato y categoría -->
+            <div class="card-top-strip">
+              <div class="file-icon-wrapper" [ngClass]="'icon-' + resource.fileType">
+                <!-- Icono SVG según el tipo de archivo -->
+                @if (resource.fileType === 'pdf') {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                } @else if (resource.fileType === 'image') {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                }
+              </div>
+
+              <span class="ion-badge resource-category-badge">
+                {{ resource.category }}
+              </span>
+            </div>
+
+            <!-- Cuerpo de la tarjeta / Banner compacta -->
+            <div class="card-main-content">
+              <h3 class="resource-title ion-card-title">{{ resource.title }}</h3>
+              <p class="resource-desc">{{ resource.description }}</p>
+            </div>
+
+            <!-- Información del autor/rol y botón de ver -->
+            <div class="card-author-footer">
+              <div class="author-info">
+                <span class="uploader-role-tag">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {{ resource.uploadedByRole }}
+                </span>
+                @if (resource.uploaderName) {
+                  <span class="uploader-name">
+                    {{ resource.uploaderName }}
+                  </span>
+                }
+              </div>
+
+              <button class="view-btn-cta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span>Visualizar</span>
+              </button>
+            </div>
+
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <h3>No se encontraron recursos</h3>
+            <p>Intenta con otros términos de búsqueda o selecciona otra categoría.</p>
+          </div>
+        }
+      </div>
+
+      <!-- VISOR DE RECURSOS EMERGENTE (ION-MODAL) CON PROTECCIÓN DE DESCARGA -->
+      @if (selectedResource) {
+        <div 
+          class="modal-backdrop ion-modal-backdrop" 
+          (click)="closeModal()"
+          (contextmenu)="$event.preventDefault()">
+          
+          <div 
+            class="modal-content resource-viewer-modal ion-modal" 
+            (click)="$event.stopPropagation()"
+            (contextmenu)="$event.preventDefault()">
+            
+            <!-- Encabezado del Modal sin botones de descarga ni abrir en nueva pestaña -->
+            <div class="viewer-modal-header">
+              <div class="header-details">
+                <div class="header-badges">
+                  <span class="ion-badge resource-category-badge">
+                    {{ selectedResource.category }}
+                  </span>
+                  <span class="role-pill">
+                    Subido por: {{ selectedResource.uploadedByRole }}
+                  </span>
+                </div>
+                <h2 class="modal-resource-title">{{ selectedResource.title }}</h2>
+              </div>
+
+              <!-- BOTÓN ÚNICO Y CLARO DE CERRAR EL MODAL -->
+              <button 
+                class="btn-close-modal" 
+                (click)="closeModal()" 
+                title="Cerrar visor de recurso">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                <span>Cerrar</span>
+              </button>
+            </div>
+
+            <!-- ADVERTENCIA INSTITUCIONAL DE PROTECCIÓN DE CONTENIDO -->
+            <div class="protection-notice-bar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>Lectura Protegida: Este documento es exclusivamente para consulta en pantalla. La descarga y copia directa están deshabilitadas.</span>
+            </div>
+
+            <!-- VISOR EMBEDIDO (IFRAME / VISTA PREVIA) CON CAPA DE PROTECCIÓN ANTI-DESCARGA -->
+            <div 
+              class="viewer-container protected-viewer"
+              (contextmenu)="$event.preventDefault()"
+              (selectstart)="$event.preventDefault()"
+              (dragstart)="$event.preventDefault()">
+              
+              <!-- CAPA/OVERLAY TRANSPARENTE DE PROTECCIÓN CSS QUE BLOQUEA ACCIONES DE CLIC DERECHO / DRAG -->
+              <div class="protection-overlay" (contextmenu)="$event.preventDefault()"></div>
+
+              @if (selectedResource.fileType === 'pdf') {
+                <object 
+                  [data]="sanitizedUrl" 
+                  type="application/pdf"
+                  class="embedded-iframe protected-media">
+                  <iframe 
+                    [src]="sanitizedUrl" 
+                    class="embedded-iframe protected-media" 
+                    frameborder="0">
+                  </iframe>
+                </object>
+              } @else if (selectedResource.fileType === 'image') {
+                <div class="image-viewer-box">
+                  <img 
+                    [src]="selectedResource.fileUrl" 
+                    [alt]="selectedResource.title"
+                    class="protected-img protected-media"
+                    (contextmenu)="$event.preventDefault()"
+                    (dragstart)="$event.preventDefault()" />
+                </div>
+              } @else {
+                <iframe 
+                  [src]="sanitizedUrl" 
+                  class="embedded-iframe protected-media" 
+                  frameborder="0"
+                  (contextmenu)="$event.preventDefault()">
+                </iframe>
+              }
+            </div>
+
+            <!-- PIE DE PÁGINA DEL MODAL CON BOTÓN DE CIERRE -->
+            <div class="viewer-modal-footer">
+              <span class="resource-file-meta">Tamaño: {{ selectedResource.size }} • Publicado: {{ selectedResource.date }}</span>
+              <button class="btn-close-footer" (click)="closeModal()">
+                Cerrar Visor
+              </button>
+            </div>
+
+          </div>
+        </div>
+      @}
+
+    </div>
