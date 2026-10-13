@@ -67,6 +67,18 @@
           <span class="badge-pill">{{ resourceService.resources().length }}</span>
         </button>
 
+        @if (isBienestarOrAdmin()) {
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'psychology'"
+            (click)="activeTab = 'psychology'"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span>Citas de Psicología</span>
+            <span class="badge-pill">{{ psychologyService.meetings().length }}</span>
+          </button>
+        }
+
         @if (isAdmin()) {
           <button
             class="tab-btn"
@@ -506,6 +518,165 @@
         </div>
       }
 
+      <!-- ==================================================================== -->
+      <!-- PESTAÑA 5: GESTIÓN DE CITAS DE PSICOLOGÍA (BIENESTAR Y ADMIN)        -->
+      <!-- ==================================================================== -->
+      @if (activeTab === 'psychology' && isBienestarOrAdmin()) {
+        <div class="tab-content-area">
+
+          <!-- Tarjetas de métricas rápidas de psicología (Paleta Institucional: Azul, Rojo, Neutros y Verde) -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:14px 18px; border-radius:12px; display:flex; flex-direction:column;">
+              <span style="font-size:12px; font-weight:700; color:#1e40af; text-transform:uppercase;">Total Solicitudes</span>
+              <span style="font-size:24px; font-weight:800; color:#0F228C;">{{ psychologyService.stats().total }}</span>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:14px 18px; border-radius:12px; display:flex; flex-direction:column;">
+              <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase;">Pendientes</span>
+              <span style="font-size:24px; font-weight:800; color:#0F228C;">{{ psychologyService.stats().pendientes }}</span>
+            </div>
+            <div style="background:#eff6ff; border:1px solid #93c5fd; padding:14px 18px; border-radius:12px; display:flex; flex-direction:column;">
+              <span style="font-size:12px; font-weight:700; color:#1d4ed8; text-transform:uppercase;">Confirmadas</span>
+              <span style="font-size:24px; font-weight:800; color:#0F228C;">{{ psychologyService.stats().confirmadas }}</span>
+            </div>
+            <div style="background:#dcfce7; border:1px solid #86efac; padding:14px 18px; border-radius:12px; display:flex; flex-direction:column;">
+              <span style="font-size:12px; font-weight:700; color:#15803d; text-transform:uppercase;">Completadas</span>
+              <span style="font-size:24px; font-weight:800; color:#166534;">{{ psychologyService.stats().completadas }}</span>
+            </div>
+          </div>
+
+          <!-- Filtros de búsqueda y estado -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <input
+                type="text"
+                [(ngModel)]="searchPsychologyQuery"
+                placeholder="Buscar por estudiante, motivo o profesional..."
+                class="form-input"
+                style="padding:8px 14px; border:1.5px solid var(--border-color); border-radius:6px; font-size:14px; min-width:300px;"
+              />
+              <select
+                [(ngModel)]="filterPsychologyStatus"
+                class="form-input"
+                style="padding:8px 14px; border:1.5px solid var(--border-color); border-radius:6px; font-size:14px; background:white;"
+              >
+                <option value="Todas">Todos los Estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Confirmada">Confirmada</option>
+                <option value="Completada">Completada</option>
+                <option value="Cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <div style="font-size:13px; color:var(--text-muted);">
+              Mostrando <strong>{{ filteredPsychologyMeetings.length }}</strong> citas
+            </div>
+          </div>
+
+          <!-- Tabla de Citas de Psicología -->
+          <div class="table-responsive">
+            <table class="cu-table">
+              <thead>
+                <tr>
+                  <th>Radicado</th>
+                  <th>Estudiante</th>
+                  <th>Motivo de Consulta</th>
+                  <th>Fecha & Horario</th>
+                  <th>Modalidad</th>
+                  <th>Profesional</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (filteredPsychologyMeetings.length === 0) {
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">
+                      No se encontraron citas de psicología con los filtros seleccionados.
+                    </td>
+                  </tr>
+                }
+                @for (m of filteredPsychologyMeetings; track m.id) {
+                  <tr>
+                    <td>
+                      <span style="font-family:monospace; font-weight:700; color:#0F228C;">#PSI-{{ m.id }}</span>
+                    </td>
+                    <td>
+                      <div style="font-weight:700; color:var(--text-dark);">{{ m.studentName }}</div>
+                      <div style="font-size:12px; color:var(--text-muted);">{{ m.studentEmail }}</div>
+                      @if (m.studentProgram) {
+                        <div style="font-size:11px; font-weight:600; color:#0F228C; margin-top:2px;">
+                          {{ m.studentProgram }}
+                        </div>
+                      }
+                    </td>
+                    <td>
+                      <div style="max-width:240px; font-size:13px; color:#334155; line-height:1.4;">
+                        {{ m.reason }}
+                      </div>
+                    </td>
+                    <td>
+                      <div style="font-weight:600; color:#0F228C;">{{ m.date }}</div>
+                      <div style="font-size:12px; color:var(--text-muted);">{{ m.startHour }} - {{ m.endHour }}</div>
+                    </td>
+                    <td>
+                      <!-- Modalidad en paleta institucional (Azul para Virtual, Neutro para Presencial) -->
+                      <span 
+                        style="display:inline-block; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600;"
+                        [style.background]="m.modality === 'Virtual' ? '#eff6ff' : '#f8fafc'"
+                        [style.color]="m.modality === 'Virtual' ? '#0F228C' : '#334155'"
+                        [style.border]="m.modality === 'Virtual' ? '1px solid #bfdbfe' : '1px solid #cbd5e1'"
+                      >
+                        {{ m.modality }}
+                      </span>
+                    </td>
+                    <td>
+                      <div style="font-size:13px; font-weight:600; color:#1e293b;">{{ m.professionalName }}</div>
+                      @if (m.linkMeeting) {
+                        <a [href]="m.linkMeeting" target="_blank" style="font-size:11px; color:#0F228C; text-decoration:underline;">
+                          Enlace Teams
+                        </a>
+                      }
+                    </td>
+                    <td>
+                      <!-- Estado en paleta institucional y verde: Confirmada (Azul institucional), Pendiente (Gris neutro), Completada (Verde), Cancelada (Rojo institucional) -->
+                      <span 
+                        style="display:inline-block; padding:4px 10px; border-radius:9999px; font-size:12px; font-weight:700;"
+                        [style.background]="m.status === 'Confirmada' ? '#eff6ff' : (m.status === 'Pendiente' ? '#f1f5f9' : (m.status === 'Completada' ? '#dcfce7' : '#fee2e2'))"
+                        [style.color]="m.status === 'Confirmada' ? '#0F228C' : (m.status === 'Pendiente' ? '#475569' : (m.status === 'Completada' ? '#15803d' : '#D9043D'))"
+                        [style.border]="m.status === 'Confirmada' ? '1px solid #93c5fd' : (m.status === 'Pendiente' ? '1px solid #cbd5e1' : (m.status === 'Completada' ? '1px solid #86efac' : '1px solid #fca5a5'))"
+                      >
+                        {{ m.status }}
+                      </span>
+                    </td>
+                    <td>
+                      <div style="display:flex; gap:6px;">
+                        <button
+                          (click)="openEditMeetingModal(m)"
+                          class="btn-cu-outline"
+                          style="padding:6px 10px; font-size:12px; color:#0F228C; border-color:#0F228C;"
+                          title="Gestionar estado y notas de la cita"
+                        >
+                          Atender / Editar
+                        </button>
+                        <button
+                          (click)="deleteMeeting(m)"
+                          class="btn-cu-outline"
+                          style="padding:6px 8px; font-size:12px; color:#D9043D; border-color:#fca5a5;"
+                          title="Eliminar cita"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      }
+
     </div>
 
     <!-- Modales de Creación y Edición -->
@@ -515,6 +686,124 @@
         (close)="closeEventModal()"
         (saved)="onEventSaved($event)"
       ></app-event-form>
+    }
+
+    <!-- Modal para Gestionar Cita de Psicología -->
+    @if (isPsychologyModalOpen && selectedMeetingToEdit) {
+      <div class="modal-backdrop" (click)="closeEditMeetingModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()" style="max-width:580px; width:92%; background:white; border-radius:16px; padding:24px; box-shadow:var(--shadow-lg); border:1.5px solid var(--primary-blue);">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1.5px solid var(--border-color); padding-bottom:12px;">
+            <div>
+              <h2 style="font-size:1.25rem; font-weight:800; color:var(--primary-blue); margin:0;">
+                Gestionar Cita #PSI-{{ selectedMeetingToEdit.id }}
+              </h2>
+              <span style="font-size:12px; color:var(--text-muted);">
+                Estudiante: <strong>{{ selectedMeetingToEdit.studentName }}</strong> ({{ selectedMeetingToEdit.studentEmail }})
+                @if (selectedMeetingToEdit.studentProgram) {
+                  • Programa: <strong style="color:var(--primary-blue);">{{ selectedMeetingToEdit.studentProgram }}</strong>
+                }
+              </span>
+            </div>
+            <button (click)="closeEditMeetingModal()" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:20px; font-weight:700;">✕</button>
+          </div>
+
+          <form (ngSubmit)="saveMeetingChanges()" style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- Resumen de Cita -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; font-size:13px; color:#334155;">
+              <div><strong>Motivo:</strong> {{ selectedMeetingToEdit.reason }}</div>
+              <div style="margin-top:4px;"><strong>Fecha y Hora:</strong> {{ selectedMeetingToEdit.date }} ({{ selectedMeetingToEdit.startHour }} - {{ selectedMeetingToEdit.endHour }}) • <strong>Modalidad:</strong> {{ selectedMeetingToEdit.modality }}</div>
+            </div>
+
+            <!-- Cambio de Estado -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Estado de la Cita *
+              </label>
+              <select
+                [(ngModel)]="editMeetingStatus"
+                name="status"
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; background:white;"
+              >
+                <option value="Pendiente">Pendiente (Por confirmar)</option>
+                <option value="Confirmada">Confirmada (Agendada con psicólogo)</option>
+                <option value="Completada">Completada (Sesión realizada)</option>
+                <option value="Cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <!-- Asignación de Profesional -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Profesional Responsable
+              </label>
+              <select
+                [(ngModel)]="editMeetingProfessional"
+                name="professional"
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; background:white;"
+              >
+                @for (pro of psychologyService.professionals(); track pro.id) {
+                  <option [value]="pro.name">{{ pro.name }} ({{ pro.specialty }})</option>
+                }
+              </select>
+            </div>
+
+            <!-- Enlace Virtual (Teams) -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Enlace de Conexión Virtual (Teams / Meet)
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="editMeetingLink"
+                name="linkMeeting"
+                placeholder="https://teams.microsoft.com/l/meetup-join/..."
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px;"
+              />
+            </div>
+
+            <!-- Observaciones Clínicas / Notas de Seguimiento -->
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+                Notas y Observaciones de Bienestar / Seguimiento
+              </label>
+              <textarea
+                [(ngModel)]="editMeetingObservations"
+                name="observations"
+                rows="3"
+                placeholder="Registra acuerdos, recomendaciones o notas clínicas de la sesión..."
+                class="form-input"
+                style="width:100%; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; resize:vertical;"
+              ></textarea>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+              <button
+                type="button"
+                (click)="closeEditMeetingModal()"
+                class="btn-cu-outline"
+                style="padding:10px 18px; font-size:14px;"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn-cu-primary"
+                style="padding:10px 20px; font-size:14px;"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
     }
 
     @if (isUserModalOpen) {

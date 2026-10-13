@@ -13,11 +13,11 @@ import { UserRole } from '../../models/user.model';
 // Componente de la barra de navegación superior institucional
 export class NavbarComponent {
   // Propiedad de entrada que indica la vista actualmente activa
-  @Input() currentView: 'calendar' | 'resources' | 'management' = 'calendar';
+  @Input() currentView: 'calendar' | 'resources' | 'psychology' | 'management' = 'calendar';
   // Evento emitido para abrir el modal de inicio de sesión
   @Output() openLogin = new EventEmitter<void>();
   // Evento emitido al cambiar de vista
-  @Output() viewChange = new EventEmitter<'calendar' | 'resources' | 'management'>();
+  @Output() viewChange = new EventEmitter<'calendar' | 'resources' | 'psychology' | 'management'>();
 
   // Inyecta el servicio de autenticación públicamente para su uso en plantilla
   constructor(public authService: AuthService) {}
@@ -28,7 +28,7 @@ export class NavbarComponent {
   }
 
   // Cambia la vista activa y emite el evento al componente padre
-  setView(view: 'calendar' | 'resources' | 'management'): void {
+  setView(view: 'calendar' | 'resources' | 'psychology' | 'management'): void {
     this.currentView = view;
     this.viewChange.emit(view);
   }

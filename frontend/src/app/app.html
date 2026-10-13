@@ -9,6 +9,8 @@
     <app-calendar (selectEvent)="onSelectEvent($event)"></app-calendar>
   } @else if (activeView === 'resources') {
     <app-resources></app-resources>
+  } @else if (activeView === 'psychology') {
+    <app-psychology></app-psychology>
   } @else if (activeView === 'management') {
     <app-unified-management></app-unified-management>
   }

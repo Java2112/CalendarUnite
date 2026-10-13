@@ -10,6 +10,8 @@ import { EventFormComponent } from '../event-form/event-form';
 import { UserFormComponent } from '../user-form/user-form';
 import { ResourceService } from '../../services/resource.service';
 import { ResourceItem } from '../../models/resource.model';
+import { PsychologyService } from '../../services/psychology.service';
+import { PsychologyMeeting, PsychologyMeetingStatus } from '../../models/psychology.model';
 
 @Component({
   selector: 'app-unified-management',
@@ -18,10 +20,10 @@ import { ResourceItem } from '../../models/resource.model';
   templateUrl: './unified-management.html',
   styleUrl: './unified-management.css'
 })
-// Componente del panel de gestión unificada para eventos, usuarios y lugares
+// Componente del panel de gestión unificada para eventos, usuarios, lugares, recursos y citas de psicología
 export class UnifiedManagementComponent implements OnInit {
-  // Pestaña activa ('events', 'places', 'users' o 'resources')
-  activeTab: 'events' | 'places' | 'users' | 'resources' = 'events';
+  // Pestaña activa ('events', 'places', 'users', 'resources' o 'psychology')
+  activeTab: 'events' | 'places' | 'users' | 'resources' | 'psychology' = 'events';
 
   // Filtros de eventos
   searchEventQuery: string = '';
@@ -60,6 +62,7 @@ export class UnifiedManagementComponent implements OnInit {
     public eventService: EventService,
     public authService: AuthService,
     public resourceService: ResourceService,
+    public psychologyService: PsychologyService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -69,8 +72,11 @@ export class UnifiedManagementComponent implements OnInit {
   }
 
   refreshAll(): void {
+    // Carga todas las entidades y catálogos en paralelo
     this.eventService.loadEvents().subscribe();
     this.resourceService.loadResources().subscribe();
+    this.psychologyService.loadMeetings().subscribe();
+    this.psychologyService.loadProfessionals().subscribe();
     this.eventService.loadPlaces().subscribe({
       next: (data) => this.places.set(data)
     });
@@ -199,12 +205,16 @@ export class UnifiedManagementComponent implements OnInit {
     this.selectedUserToEdit = null;
   }
 
+  // Guarda un usuario y sincroniza la lista de profesionales en caso de que sea del rol Bienestar
   onUserSaved(user: User): void {
     this.closeUserModal();
     this.showSuccess('Usuario guardado exitosamente.');
     this.loadUsers();
+    // Actualiza en tiempo real los profesionales de psicología disponibles
+    this.psychologyService.loadProfessionals().subscribe();
   }
 
+  // Activa o desactiva el estado de un usuario
   toggleUserStatus(user: User): void {
     const id = user.id_usuario || Number(user.id);
     const newStatus = !user.estado;
@@ -212,6 +222,8 @@ export class UnifiedManagementComponent implements OnInit {
       next: () => {
         this.showSuccess(`Estado del usuario ${newStatus ? 'activado' : 'desactivado'} con éxito.`);
         this.loadUsers();
+        // Sincroniza los profesionales de bienestar activos
+        this.psychologyService.loadProfessionals().subscribe();
       },
       error: (err) => {
         this.showError(err.error?.error || 'Error al cambiar estado del usuario.');
@@ -219,6 +231,7 @@ export class UnifiedManagementComponent implements OnInit {
     });
   }
 
+  // Confirma y elimina un usuario del sistema
   confirmDeleteUser(user: User): void {
     const name = user.nombre ? `${user.nombre} ${user.apellido || ''}` : user.name;
     if (confirm(`¿Eliminar al usuario "${name}" del sistema? Esta acción no se puede deshacer.`)) {
@@ -227,6 +240,8 @@ export class UnifiedManagementComponent implements OnInit {
         next: () => {
           this.showSuccess(`Usuario "${name}" eliminado.`);
           this.loadUsers();
+          // Sincroniza los profesionales de bienestar disponibles
+          this.psychologyService.loadProfessionals().subscribe();
         },
         error: (err) => {
           this.showError(err.error?.error || 'Error al eliminar usuario.');
@@ -326,6 +341,93 @@ export class UnifiedManagementComponent implements OnInit {
     });
   }
 
+  // Propiedades para la gestión de citas de psicología
+  searchPsychologyQuery: string = '';
+  filterPsychologyStatus: string = 'Todas';
+  isPsychologyModalOpen: boolean = false;
+  selectedMeetingToEdit: PsychologyMeeting | null = null;
+  editMeetingStatus: PsychologyMeetingStatus = 'Pendiente';
+  editMeetingLink: string = '';
+  editMeetingObservations: string = '';
+  editMeetingProfessional: string = '';
+
+  // Determina si el usuario tiene rol Bienestar o Admin para gestionar psicología
+  isBienestarOrAdmin(): boolean {
+    const role = this.authService.userRole()?.toLowerCase();
+    return role === 'admin' || role === 'bienestar';
+  }
+
+  // Retorna las citas de psicología filtradas por estado y término de búsqueda
+  get filteredPsychologyMeetings(): PsychologyMeeting[] {
+    let list = this.psychologyService.meetings();
+    if (this.filterPsychologyStatus !== 'Todas') {
+      list = list.filter(m => m.status.toLowerCase() === this.filterPsychologyStatus.toLowerCase());
+    }
+    if (this.searchPsychologyQuery.trim()) {
+      const q = this.searchPsychologyQuery.toLowerCase();
+      list = list.filter(m =>
+        m.studentName.toLowerCase().includes(q) ||
+        m.studentEmail.toLowerCase().includes(q) ||
+        m.reason.toLowerCase().includes(q) ||
+        m.professionalName.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  // Abre el modal para editar el estado o notas de una cita
+  openEditMeetingModal(meeting: PsychologyMeeting): void {
+    this.selectedMeetingToEdit = meeting;
+    this.editMeetingStatus = meeting.status;
+    this.editMeetingLink = meeting.linkMeeting || '';
+    this.editMeetingObservations = meeting.observations || '';
+    this.editMeetingProfessional = meeting.professionalName;
+    this.isPsychologyModalOpen = true;
+  }
+
+  // Cierra el modal de edición de cita
+  closeEditMeetingModal(): void {
+    this.isPsychologyModalOpen = false;
+    this.selectedMeetingToEdit = null;
+  }
+
+  // Guarda los cambios realizados a la cita de psicología
+  saveMeetingChanges(): void {
+    if (!this.selectedMeetingToEdit) return;
+
+    const updates: Partial<PsychologyMeeting> = {
+      status: this.editMeetingStatus,
+      linkMeeting: this.editMeetingLink.trim(),
+      observations: this.editMeetingObservations.trim(),
+      professionalName: this.editMeetingProfessional
+    };
+
+    this.psychologyService.updateMeeting(this.selectedMeetingToEdit.id, updates).subscribe({
+      next: () => {
+        this.showSuccess(`¡Cita de ${this.selectedMeetingToEdit?.studentName} actualizada exitosamente!`);
+        this.closeEditMeetingModal();
+      },
+      error: () => {
+        this.showError('Error al actualizar la cita de psicología.');
+      }
+    });
+  }
+
+  // Elimina una cita de psicología
+  deleteMeeting(meeting: PsychologyMeeting): void {
+    if (!confirm(`¿Estás seguro de cancelar y eliminar la cita de ${meeting.studentName}?`)) {
+      return;
+    }
+    this.psychologyService.deleteMeeting(meeting.id).subscribe({
+      next: () => {
+        this.showSuccess(`Cita de ${meeting.studentName} eliminada del sistema.`);
+      },
+      error: () => {
+        this.showError('Error al eliminar la cita.');
+      }
+    });
+  }
+
   private showSuccess(msg: string): void {
     this.actionSuccessMessage = msg;
     this.actionErrorMessage = null;
@@ -346,3 +448,4 @@ export class UnifiedManagementComponent implements OnInit {
     }, 5000);
   }
 }
+

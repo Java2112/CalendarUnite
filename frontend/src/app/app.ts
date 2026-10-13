@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar';
 import { CalendarComponent } from './components/calendar/calendar';
 import { ResourcesComponent } from './components/resources/resources';
+import { PsychologyComponent } from './components/psychology/psychology';
 import { EventDetailComponent } from './components/event-detail/event-detail';
 import { LoginComponent } from './components/login/login';
 import { UnifiedManagementComponent } from './components/unified-management/unified-management';
@@ -21,6 +22,7 @@ import { AuthService } from './services/auth.service';
     NavbarComponent,
     CalendarComponent,
     ResourcesComponent,
+    PsychologyComponent,
     UnifiedManagementComponent,
     EventDetailComponent,
     LoginComponent
@@ -32,8 +34,8 @@ import { AuthService } from './services/auth.service';
 })
 // Clase controladora principal de la aplicación
 export class App implements OnInit {
-  // Vista activa actual en la aplicación ('calendar', 'resources' o 'management')
-  activeView: 'calendar' | 'resources' | 'management' = 'calendar';
+  // Vista activa actual en la aplicación ('calendar', 'resources', 'psychology' o 'management')
+  activeView: 'calendar' | 'resources' | 'psychology' | 'management' = 'calendar';
 
   // Año actual dinámico para el footer institucional
   readonly currentYear = new Date().getFullYear();
@@ -45,22 +47,26 @@ export class App implements OnInit {
   constructor(public authService: AuthService) {}
 
   ngOnInit(): void {
-    // Sincroniza la vista con la URL del navegador si el usuario navega a /recursos
+    // Sincroniza la vista con la URL del navegador si el usuario navega a /recursos o /psicologia
     const path = window.location.pathname;
     if (path.includes('recursos') || path.includes('resources')) {
       this.activeView = 'resources';
+    } else if (path.includes('psicologia') || path.includes('psychology')) {
+      this.activeView = 'psychology';
     } else if (path.includes('cronograma')) {
       this.activeView = 'calendar';
     }
   }
 
-  // Maneja el cambio de vista entre Cronograma Público, Recursos Públicos y Panel de Gestión
-  onViewChange(view: 'calendar' | 'resources' | 'management'): void {
+  // Maneja el cambio de vista entre Cronograma Público, Recursos, Psicología y Panel de Gestión
+  onViewChange(view: 'calendar' | 'resources' | 'psychology' | 'management'): void {
     // Actualiza la propiedad con la vista seleccionada
     this.activeView = view;
     
     // Actualiza sutilmente la ruta en la barra de direcciones del navegador
-    const newPath = view === 'resources' ? '/recursos' : (view === 'calendar' ? '/cronograma' : '/gestion');
+    const newPath = view === 'resources' 
+      ? '/recursos' 
+      : (view === 'psychology' ? '/psicologia' : (view === 'calendar' ? '/cronograma' : '/gestion'));
     window.history.pushState({}, '', newPath);
   }
 

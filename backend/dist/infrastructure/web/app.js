@@ -61,6 +61,19 @@ const EventRoutes_1 = require("../routes/EventRoutes");
 const PlaceRoutes_1 = require("../routes/PlaceRoutes");
 // Importa la función constructora de rutas de recursos públicos
 const ResourceRoutes_1 = require("../routes/ResourceRoutes");
+// Importa el adaptador de citas de atención psicológica
+const PsychologyAdapter_1 = require("../adapter/PsychologyAdapter");
+// Importa los casos de uso del módulo de psicología
+const GetPsychologyMeetingsUseCase_1 = require("../../application/use-cases/psychology/GetPsychologyMeetingsUseCase");
+const GetPsychologyMeetingByIdUseCase_1 = require("../../application/use-cases/psychology/GetPsychologyMeetingByIdUseCase");
+const BookPsychologyMeetingUseCase_1 = require("../../application/use-cases/psychology/BookPsychologyMeetingUseCase");
+const UpdatePsychologyMeetingUseCase_1 = require("../../application/use-cases/psychology/UpdatePsychologyMeetingUseCase");
+const DeletePsychologyMeetingUseCase_1 = require("../../application/use-cases/psychology/DeletePsychologyMeetingUseCase");
+const GetPsychologistsUseCase_1 = require("../../application/use-cases/psychology/GetPsychologistsUseCase");
+// Importa el controlador de psicología
+const PsychologyController_1 = require("../controller/PsychologyController");
+// Importa las rutas del módulo de psicología
+const PsychologyRoutes_1 = require("../routes/PsychologyRoutes");
 // Función principal que ensambla y configura la aplicación Express
 function createApp() {
     // Crea la instancia de la aplicación Express
@@ -116,6 +129,17 @@ function createApp() {
     const placeController = new PlaceController_1.PlaceController(getPlacesUseCase);
     // Instancia el controlador de recursos públicos con sus casos de uso
     const resourceController = new ResourceController_1.ResourceController(getResourcesUseCase, createResourceUseCase);
+    // Instancia el adaptador de citas de psicología vinculado a los usuarios de la base de datos
+    const psychologyAdapter = new PsychologyAdapter_1.PsychologyAdapter(userAdapter);
+    // Instancia los casos de uso de psicología
+    const getPsychologyMeetingsUseCase = new GetPsychologyMeetingsUseCase_1.GetPsychologyMeetingsUseCase(psychologyAdapter);
+    const getPsychologyMeetingByIdUseCase = new GetPsychologyMeetingByIdUseCase_1.GetPsychologyMeetingByIdUseCase(psychologyAdapter);
+    const bookPsychologyMeetingUseCase = new BookPsychologyMeetingUseCase_1.BookPsychologyMeetingUseCase(psychologyAdapter);
+    const updatePsychologyMeetingUseCase = new UpdatePsychologyMeetingUseCase_1.UpdatePsychologyMeetingUseCase(psychologyAdapter);
+    const deletePsychologyMeetingUseCase = new DeletePsychologyMeetingUseCase_1.DeletePsychologyMeetingUseCase(psychologyAdapter);
+    const getPsychologistsUseCase = new GetPsychologistsUseCase_1.GetPsychologistsUseCase(psychologyAdapter);
+    // Instancia el controlador de psicología
+    const psychologyController = new PsychologyController_1.PsychologyController(getPsychologyMeetingsUseCase, getPsychologyMeetingByIdUseCase, bookPsychologyMeetingUseCase, updatePsychologyMeetingUseCase, deletePsychologyMeetingUseCase, getPsychologistsUseCase);
     // Registra las rutas de autenticación bajo /api/auth
     app.use('/api/auth', (0, UserRoutes_1.createUserRoutes)(userController));
     // Registra las rutas de gestión de usuarios bajo /api
@@ -126,6 +150,8 @@ function createApp() {
     app.use('/api', (0, PlaceRoutes_1.createPlaceRoutes)(placeController));
     // Registra las rutas de recursos públicos bajo /api
     app.use('/api', (0, ResourceRoutes_1.createResourceRoutes)(resourceController));
+    // Registra las rutas de atención y citas de psicología bajo /api
+    app.use('/api', (0, PsychologyRoutes_1.createPsychologyRoutes)(psychologyController));
     // Ruta de comprobación de salud del servicio backend
     app.get('/api/health', (req, res) => {
         // Retorna estado OK, hora actual y nombre del servicio
